@@ -1,0 +1,36 @@
+/business.jpg
+Dashboard.jpg
+E-mail.jpg
+privat.jpg
+Rachunek.jpg
+Rachunek2.jpg
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+
+# ---- Django ----
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# ---- Virtualenv ----
+env/
+venv/
+.venv/
+
+# ---- Environment Variables ----
+.env
+*.env
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
