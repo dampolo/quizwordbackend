@@ -6,6 +6,16 @@ from auth_app.models import User
 class VocabularyCategory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, default="STANDARD")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ("user", "name")
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
 
 class VocabularyWord(models.Model):
@@ -26,3 +36,12 @@ class VocabularyWord(models.Model):
 
     source_rank = models.IntegerField(default=0)
     target_rank = models.IntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["source_word"]
+
+    def __str__(self):
+        return f"{self.source_word} → {self.target_word}"
