@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 import os
+from datetime import timedelta
 env = environ.Env()
 
 
@@ -31,7 +32,8 @@ SECRET_KEY = 'django-insecure-2--ir7&37dm!$((nisv7&%)m7utmhj%2@^20so@wh1b=u7of#4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',
+                 '34.32.2.236']
 
 
 # Application definition
@@ -46,6 +48,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'auth_app',
+    'rest_framework_simplejwt',
+    'vocabulary_app'
 ]
 
 MIDDLEWARE = [
@@ -57,6 +61,39 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+
+    'http://127.0.0.1:5500',
+
+    'http://127.0.0.1:4200',
+
+    'http://localhost:4200',
+
+    'http://localhost:5500',
+
+    'http://localhost:5173',
+
+    'https://demo.startinkrypto.de',
+
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+
+    'http://127.0.0.1:5500',
+
+    'http://127.0.0.1:4200',
+
+    'http://localhost:4200',
+
+    'http://localhost:5500',
+
+    'http://localhost:5173',
+
+    'https://demo.startinkrypto.de',
 ]
 
 ROOT_URLCONF = 'quizword_core.urls'
@@ -125,3 +162,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        "rest_framework.authentication.SessionAuthentication",
+    ]
+}
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
