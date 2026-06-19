@@ -40,7 +40,7 @@ class VocabularyWord(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["source_word"]
+        ordering = ["id"]
 
     def __str__(self):
         return f"{self.source_word} → {self.target_word}"

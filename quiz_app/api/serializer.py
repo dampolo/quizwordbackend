@@ -7,7 +7,6 @@ class QuizSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = [
             "id",
-            "user",
             "quiz_name",
             "words",
             "created_at",
