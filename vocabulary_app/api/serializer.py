@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from models import VocabularyCategory, VocabularyWord
+from vocabulary_app.models import VocabularyCategory, VocabularyWord
 
 
 class VocabularyWordSerializer(serializers.ModelSerializer):

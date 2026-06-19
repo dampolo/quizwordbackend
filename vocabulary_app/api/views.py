@@ -1,8 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from models import VocabularyCategory, VocabularyWord
-from serializer import (
+from vocabulary_app.models import VocabularyCategory, VocabularyWord
+
+from vocabulary_app.api.serializer import (
     VocabularyCategorySerializer,
     VocabularyWordSerializer,
 )
