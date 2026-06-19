@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from auth_app.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+User = get_user_model()
 
 class RegistrationSerializer(serializers.ModelSerializer):
     repeated_password = serializers.CharField(write_only=True)
@@ -13,6 +13,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {
                 'write_only': True
+            },
+             'role': {
+                'required': False
             },
             'email': {
                 'required': True
@@ -33,15 +36,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
         user = User(
             email=validated_data['email'],
             username=validated_data['email'],
-            role=validated_data['role']
         )
 
         user.set_password(password)
         user.save()
         return user
-
-
-User = get_user_model()
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

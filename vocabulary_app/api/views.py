@@ -28,4 +28,16 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return VocabularyWord.objects.filter(
-            user=self.request.user)
+            category__user=self.request.user)
+    
+    def perform_create(self, serializer):
+        category = serializer.validated_data.get("category")
+        print(category)
+        
+        if category is None:
+            category, _ = VocabularyCategory.objects.get_or_create(
+                user=self.request.user,
+                name="STANDARD"
+            )
+
+        serializer.save(category=category)

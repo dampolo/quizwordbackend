@@ -31,7 +31,7 @@ class RegistrationView(APIView):
             saved_account = serializer.save()
             saved_account.is_active = False
             saved_account.save() 
-            EmailService.confirm_your_email(saved_account, request)
+            # EmailService.confirm_your_email(saved_account, request)
 
             data = {
                 'username': saved_account.username,
