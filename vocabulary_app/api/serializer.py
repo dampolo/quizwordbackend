@@ -49,3 +49,9 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
             "id",
             "created_at",
         )
+
+class VocabularyWordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VocabularyWord
+        fields = "__all__"
+        

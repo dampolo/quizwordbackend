@@ -1,14 +1,29 @@
 from rest_framework import serializers
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
+from vocabulary_app.api.serializer import VocabularyWordSerializer
+from vocabulary_app.models import VocabularyWord
 
 class QuizSerializer(serializers.ModelSerializer):
+    words = serializers.PrimaryKeyRelatedField(
+        queryset=VocabularyWord.objects.all(),
+        many=True,
+        write_only=True
+    )
+
+    words_detail = VocabularyWordSerializer(
+        source="words",
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = Quiz
         fields = [
             "id",
             "quiz_name",
             "words",
+            "words_detail",
             "created_at",
             "updated_at",
         ]
