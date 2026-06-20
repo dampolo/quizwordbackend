@@ -3,15 +3,17 @@ from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
 from vocabulary_app.api.serializer import VocabularyWordSerializer
 from vocabulary_app.models import VocabularyWord
+from quiz_app.models import Quiz, VocabularyWord
 
 class QuizSerializer(serializers.ModelSerializer):
+    quiz_id = serializers.IntegerField(source="id", read_only=True)
     words = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyWord.objects.all(),
         many=True,
         write_only=True
     )
 
-    words_detail = VocabularyWordSerializer(
+    answers = VocabularyWordSerializer(
         source="words",
         many=True,
         read_only=True
@@ -20,21 +22,31 @@ class QuizSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = [
-            "id",
+            "quiz_id",
             "quiz_name",
             "words",
-            "words_detail",
+            "answers",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+        if request:
+            self.fields["words"].queryset = VocabularyWord.objects.filter(
+                user=request.user
+            )
+
 
 class QuizAnswerSerializer(serializers.ModelSerializer):
+    word_id = serializers.IntegerField(source="id", read_only=True)
     class Meta:
         model = QuizAnswer
         fields = [
-            "id",
+            "word_id",
             "attempt",
             "word",
             "user_answer",
