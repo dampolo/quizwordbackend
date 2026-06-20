@@ -1,7 +1,7 @@
 from django.db import models
 from vocabulary_app.models import VocabularyWord
 from django.conf import settings
-
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 class Quiz(models.Model):
@@ -20,7 +20,18 @@ class Quiz(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
 class QuizAttempt(models.Model):
+    class Direction(models.TextChoices): 
+        FORWARD = "FORWARD", _("Source → Target") 
+        REVERSE= "REVERSE", _("Target → Source")
+    
+    direction = models.CharField(
+        max_length=10,
+        choices=Direction.choices,
+        default=Direction.FORWARD
+    )
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     started_at = models.DateTimeField(auto_now_add=True)
@@ -32,7 +43,8 @@ class QuizAttempt(models.Model):
         correct = answers.filter(is_correct=True).count()
         total = answers.count()
         return f"{correct}/{total}"
-    
+
+
 class QuizAnswer(models.Model):
     attempt = models.ForeignKey(
         QuizAttempt,
