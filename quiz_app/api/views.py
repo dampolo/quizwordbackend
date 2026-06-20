@@ -48,7 +48,7 @@ class QuizSubmitAPIView(APIView):
         results = []
 
         for answer in answers:
-            word_id = answer.get("word_id")
+            word_id = answer.get("id")
             user_answer = answer.get("target_word", "")
 
             word = VocabularyWord.objects.get(
@@ -65,6 +65,8 @@ class QuizSubmitAPIView(APIView):
                 correct_answer=word.target_word,
                 is_correct=is_correct
             )
+
+            UpdateRank.update_rank(word, is_correct);
 
             results.append({
                 "word_id": word.id,
@@ -83,3 +85,13 @@ class QuizSubmitAPIView(APIView):
             "score": attempt.score,
             "results": results
         })
+    
+
+class UpdateRank:
+    @staticmethod
+    def update_rank(word, is_correct):
+        if is_correct:
+            word.target_rank += 1
+        else:
+            word.target_rank -= 1
+        word.save(update_fields=["target_rank"])

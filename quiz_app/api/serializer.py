@@ -37,16 +37,15 @@ class QuizSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if request:
             self.fields["words"].queryset = VocabularyWord.objects.filter(
-                user=request.user
+                category__user=request.user
             )
 
 
 class QuizAnswerSerializer(serializers.ModelSerializer):
-    word_id = serializers.IntegerField(source="id", read_only=True)
     class Meta:
         model = QuizAnswer
         fields = [
-            "word_id",
+            "id",
             "attempt",
             "word",
             "user_answer",
