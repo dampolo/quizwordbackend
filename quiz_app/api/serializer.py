@@ -57,11 +57,16 @@ class QuizAnswerSerializer(serializers.ModelSerializer):
 class QuizAttemptSerializer(serializers.ModelSerializer):
     answers = QuizAnswerSerializer(many=True, read_only=True)
     score = serializers.ReadOnlyField()
+    direction = serializers.CharField(
+        source="get_direction_display",
+        read_only=True
+    )
 
     class Meta:
         model = QuizAttempt
         fields = [
             "id",
+            "direction",
             "user",
             "quiz",
             "started_at",

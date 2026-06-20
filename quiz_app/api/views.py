@@ -38,6 +38,8 @@ class QuizSubmitAPIView(APIView):
             user=request.user
         )
 
+        direction=request.data.get("direction")
+
         answers = request.data.get("answers", [])
 
         attempt = QuizAttempt.objects.create(
@@ -49,20 +51,25 @@ class QuizSubmitAPIView(APIView):
 
         for answer in answers:
             word_id = answer.get("id")
-            user_answer = answer.get("target_word", "")
+            user_answer = answer.get("answer", "")
 
             word = VocabularyWord.objects.get(
                 id=word_id,
                 category__user=request.user
             )
 
-            is_correct = word.target_word == user_answer
+            if direction == QuizAttempt.Direction.FORWARD:
+                correct_answer = word.target_word
+            else:
+                correct_answer = word.source_word
+
+            is_correct = correct_answer == user_answer
 
             QuizAnswer.objects.create(
                 attempt=attempt,
                 word=word,
                 user_answer=user_answer,
-                correct_answer=word.target_word,
+                correct_answer=correct_answer,
                 is_correct=is_correct
             )
 
@@ -71,12 +78,13 @@ class QuizSubmitAPIView(APIView):
             results.append({
                 "word_id": word.id,
                 "source_word": word.source_word,
-                "user_answer": user_answer,
+                "user_answer": correct_answer,
                 "correct_answer": word.target_word,
                 "is_correct": is_correct,
             })
 
         attempt.finished_at = timezone.now()
+        attempt.direction = direction
         attempt.save()
 
         return Response({
