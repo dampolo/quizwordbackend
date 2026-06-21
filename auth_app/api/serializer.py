@@ -30,7 +30,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     def validate_password(self, value):
         repeated_pw = self.initial_data.get("repeated_password")        
-        # Custom complexity validation
         try:
             CustomPasswordValidator().validate(value)
         except DjangoValidationError as error:
