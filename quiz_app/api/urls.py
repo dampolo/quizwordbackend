@@ -12,6 +12,6 @@ router.register(r"quizzes", QuizViewSet, basename="quiz")
 router.register(r"attempts", QuizAttemptViewSet, basename="attempt")
 
 urlpatterns = [
-    path("quiz-answer/<int:quiz_id>/submit/", QuizSubmitAPIView.as_view(),name="quiz-answer"),
+    path("quiz-answer/<int:quiz_id>/submit/", QuizSubmitAPIView.as_view(), name="quiz-answer"),
     path("", include(router.urls)),
 ]
