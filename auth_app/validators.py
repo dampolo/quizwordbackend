@@ -19,3 +19,14 @@ class CustomPasswordValidator:
             errors.append(_("Password must not contain any spaces."))        
         if errors:
             raise ValidationError(errors)
+        
+    def get_help_text(self):
+        return _(
+            "Your password must meet the following requirements:",
+            "- At least 10 characters long",
+            "- At least one uppercase letter (A-Z)",
+            "- At least one lowercase letter (a-z)",
+            "- At least one digit (0-9)",
+            "- At least one special character (@ $ ! % + - / * ? &)",
+            "- No spaces"
+        )

@@ -24,6 +24,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
             }
         }
 
+    
+    def get_help_text(self, obj):
+        return CustomPasswordValidator().get_help_text()
+
     def validate_password(self, value):
         repeated_pw = self.initial_data.get("repeated_password")        
         # Custom complexity validation
