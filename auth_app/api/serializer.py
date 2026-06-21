@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from auth_app.validators import CustomPasswordValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
@@ -22,10 +24,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
             }
         }
 
-    def validate_repeated_password(self, value):
-        password = self.initial_data.get('password')
-        if password and value and password != value:
-            raise serializers.ValidationError('Passwords do not match')
+    def validate_password(self, value):
+        repeated_pw = self.initial_data.get("repeated_password")        
+        # Custom complexity validation
+        try:
+            CustomPasswordValidator().validate(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages)
+        
+        if repeated_pw and value != repeated_pw:
+            raise serializers.ValidationError("Passwords don't match.")
         return value
 
     def create(self, validated_data):
