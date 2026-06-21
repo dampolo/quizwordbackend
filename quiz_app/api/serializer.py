@@ -53,9 +53,8 @@ class QuizAnswerSerializer(serializers.ModelSerializer):
             "is_correct",
         ]
 
-
-class QuizAttemptSerializer(serializers.ModelSerializer):
-    answers = QuizAnswerSerializer(many=True, read_only=True)
+# User can see list of his all quizzes
+class QuizAttemptListSerializer(serializers.ModelSerializer):
     score = serializers.ReadOnlyField()
     direction = serializers.CharField(
         source="get_direction_display",
@@ -72,5 +71,12 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
             "started_at",
             "finished_at",
             "score",
-            "answers",
         ]
+
+# User can see details from every quiz
+class QuizAttemptDetailSerializer(serializers.ModelSerializer):
+    answers = QuizAnswerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = QuizAttempt
+        fields = "__all__"

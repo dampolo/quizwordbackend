@@ -3,8 +3,8 @@ from rest_framework.views import APIView, View
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 from quiz_app.api.serializer import (
     QuizSerializer,
-    QuizAttemptSerializer,
-    QuizAnswerSerializer,
+    QuizAttemptDetailSerializer,
+    QuizAttemptListSerializer
 )
 
 from django.utils import timezone
@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from vocabulary_app.models import VocabularyWord
 
-
+# User can create his own quiz
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -25,9 +25,14 @@ class QuizViewSet(viewsets.ModelViewSet):
 
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
-    queryset = QuizAttempt.objects.all()
-    serializer_class = QuizAttemptSerializer
+    def get_queryset(self):
+        return QuizAttempt.objects.filter(user=self.request.user)
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return QuizAttemptListSerializer
+
+        return QuizAttemptDetailSerializer
 
 class QuizSubmitAPIView(APIView):
     permission_classes = [IsAuthenticated]
