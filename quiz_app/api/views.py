@@ -73,7 +73,7 @@ class QuizSubmitAPIView(APIView):
                 is_correct=is_correct
             )
 
-            UpdateRank.update_rank(word, is_correct);
+            UpdateRank.update_rank(word, is_correct, direction);
 
             results.append({
                 "word_id": word.id,
@@ -97,9 +97,16 @@ class QuizSubmitAPIView(APIView):
 
 class UpdateRank:
     @staticmethod
-    def update_rank(word, is_correct):
-        if is_correct:
-            word.target_rank += 1
+    def update_rank(word, is_correct, direction):
+        if direction == QuizAttempt.Direction.FORWARD:
+            if is_correct:
+                word.target_rank += 1
+            else:
+                word.target_rank -= 1
+            word.save(update_fields=["target_rank"])
         else:
-            word.target_rank -= 1
-        word.save(update_fields=["target_rank"])
+            if is_correct:
+                word.source_rank += 1
+            else:
+                word.source_rank -= 1
+            word.save(update_fields=["source_rank"])
