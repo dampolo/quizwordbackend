@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from vocabulary_app.models import VocabularyCategory, VocabularyWord
@@ -25,8 +25,10 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
 class VocabularyWordViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyWordSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ["source_word", "target_word"]
+    search_fields = ["source_word", "target_word"]
+
     def get_queryset(self):
         return VocabularyWord.objects.filter(
             category__user=self.request.user)
