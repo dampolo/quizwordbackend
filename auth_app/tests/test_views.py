@@ -36,3 +36,5 @@ class RegistrationViewTest(APITestCase):
         self.assertTrue(user.check_password("StrongPass123!"))
 
         self.assertEqual(response.data["email"], "test@example.com")
+
+        self.assertEqual(response.data["username"], "test@example.com")
