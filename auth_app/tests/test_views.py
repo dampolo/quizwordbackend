@@ -38,3 +38,7 @@ class RegistrationViewTest(APITestCase):
         self.assertEqual(response.data["email"], "test@example.com")
 
         self.assertEqual(response.data["username"], "test@example.com")
+
+        self.assertEqual(response.data["user_id"], user.pk)
+
+        self.assertEqual(response.data["customer_number"], user.customer_number)
