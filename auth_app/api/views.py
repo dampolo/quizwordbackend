@@ -39,7 +39,7 @@ class RegistrationView(APIView):
                 'user_id': saved_account.pk,
                 'customer_number': saved_account.customer_number,
             }
-            return Response(data)
+            return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
