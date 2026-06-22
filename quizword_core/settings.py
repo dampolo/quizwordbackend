@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'django_filters',
     'auth_app',
     'rest_framework_simplejwt',
     'vocabulary_app',

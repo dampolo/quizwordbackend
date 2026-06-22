@@ -40,7 +40,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        print(validated_data)
         password = validated_data['password']
         validated_data.pop('repeated_password')
 
