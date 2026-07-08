@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from vocabulary_app.models import VocabularyWord
 
-# User can create his own quiz
+# Use can see all his quizes
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -26,8 +26,14 @@ class QuizViewSet(viewsets.ModelViewSet):
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
-        return QuizAttempt.objects.filter(user=self.request.user)
+        queryset = QuizAttempt.objects.filter(user=self.request.user)
+        
+        quiz_id = self.request.query_params.get("quiz_id")
+        if quiz_id:
+            queryset = queryset.filter(quiz_id=quiz_id)
 
+        return queryset
+    
     def get_serializer_class(self):
         if self.action == "list":
             return QuizAttemptListSerializer

@@ -10,8 +10,11 @@ class QuizSerializer(serializers.ModelSerializer):
     words = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyWord.objects.all(),
         many=True,
-        write_only=True
+        write_only=True,
+        required=False,
     )
+
+    words_count = serializers.SerializerMethodField()
 
     answers = VocabularyWordSerializer(
         source="words",
@@ -25,11 +28,15 @@ class QuizSerializer(serializers.ModelSerializer):
             "quiz_id",
             "quiz_name",
             "words",
+            "words_count",
             "answers",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+    def get_words_count(self, obj):
+        return obj.words.count()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,18 +49,20 @@ class QuizSerializer(serializers.ModelSerializer):
 
 
 class QuizAnswerSerializer(serializers.ModelSerializer):
+    soure_word = serializers.CharField(source="word.source_word", read_only=True)
     class Meta:
         model = QuizAnswer
         fields = [
             "id",
             "attempt",
             "word",
+            "soure_word",
             "user_answer",
             "correct_answer",
             "is_correct",
         ]
 
-# User can see list of his all quizzes
+# User can see list of his all quizzes which he did
 class QuizAttemptListSerializer(serializers.ModelSerializer):
     score = serializers.ReadOnlyField()
     direction = serializers.CharField(
