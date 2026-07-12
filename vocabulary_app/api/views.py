@@ -39,8 +39,6 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {
-    "source_word": ["exact", "icontains"],
-    "target_word": ["exact", "icontains"],
     "category__target_language__language_name": ["exact"],
 }    
     search_fields = ["source_word", "target_word"]
