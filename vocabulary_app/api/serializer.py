@@ -1,7 +1,13 @@
 from rest_framework import serializers
-from vocabulary_app.models import VocabularyCategory, VocabularyWord
+from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language
 
 
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
+        fields = ["id", "language_name"]
+        read_only_fields = ["id"]
+        
 class VocabularyWordSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
@@ -12,6 +18,16 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
     category_name = serializers.StringRelatedField(
         source="category",
         read_only=False
+    )
+
+    language_id = serializers.IntegerField(
+        source="category.target_language_id",
+        read_only=True,
+    )
+
+    language_name = serializers.CharField(
+        source="category.target_language.language_name",
+        read_only=True,
     )
 
     class Meta:
