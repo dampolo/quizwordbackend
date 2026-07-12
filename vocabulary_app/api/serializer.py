@@ -7,7 +7,7 @@ class LanguageSerializer(serializers.ModelSerializer):
         model = Language
         fields = ["id", "language_name"]
         read_only_fields = ["id"]
-        
+
 class VocabularyWordSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
@@ -54,10 +54,22 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
 
 class VocabularyCategorySerializer(serializers.ModelSerializer):
+    language_id = serializers.IntegerField(
+    source="target_language_id",
+    write_only=True,
+    )
+
+    language_name = serializers.CharField(
+        source="target_language.language_name",
+        read_only=True,
+    )
+
     class Meta:
         model = VocabularyCategory
         fields = (
             "id",
+            "language_id",
+            "language_name",
             "name",
             "created_at",
         )

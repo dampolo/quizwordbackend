@@ -41,7 +41,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     filterset_fields = {
     "source_word": ["exact", "icontains"],
     "target_word": ["exact", "icontains"],
-    "category__target_language": ["exact"],
+    "category__target_language__language_name": ["exact"],
 }    
     search_fields = ["source_word", "target_word"]
 
