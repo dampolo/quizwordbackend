@@ -10,6 +10,7 @@ from vocabulary_app.api.serializer import (
     LanguageSerializer
 )
 
+
 class LanguageViewSet(viewsets.ModelViewSet):
     serializer_class = LanguageSerializer
     permission_classes = [IsAuthenticated]
@@ -24,6 +25,11 @@ class LanguageViewSet(viewsets.ModelViewSet):
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyCategorySerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = {"target_language": ["exact"]}
+    filterset_fields = {
+        "target_language__language_name": ["exact"],
+    }
 
     def get_queryset(self):
         return VocabularyCategory.objects.filter(
@@ -39,20 +45,21 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {
-    "category__target_language__language_name": ["exact"],
-}    
+        "category__target_language__language_name": ["exact"],
+    }
     search_fields = ["source_word", "target_word"]
 
     def get_queryset(self):
         return VocabularyWord.objects.filter(
             category__user=self.request.user)
-    
+
+
     def perform_create(self, serializer):
-        category = serializer.validated_data.get("category")
+        category = serializer.validated_data.pop("category", None)
         language = serializer.validated_data.pop("language", None)
 
-        if category is not None:
-            if category.user_id != self.request.user.id:
+        if category:
+            if category.user != self.request.user:
                 raise PermissionDenied(
                     "You cannot add words to another user's category."
                 )
@@ -60,10 +67,21 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
             serializer.save(category=category)
             return
 
+        if language:
+            if language.user != self.request.user:
+                raise PermissionDenied(
+                    "You cannot use another user's language."
+                )
+        else:
+            language, _ = Language.objects.get_or_create(
+                user=self.request.user,
+                language_name="Without",
+            )
+
         category, _ = VocabularyCategory.objects.get_or_create(
             user=self.request.user,
-            name="STANDARD",
             target_language=language,
+            name="STANDARD",
         )
 
         serializer.save(category=category)

@@ -7,7 +7,7 @@ class Language(models.Model):
                              on_delete=models.CASCADE)
     language_name = models.CharField(
         max_length=100,
-        default="English"
+        default="Without"
     )
 
     class Meta:
@@ -32,8 +32,13 @@ class VocabularyCategory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "name")
-        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "target_language", "name"],
+                name="unique_category_per_language",
+            )
+        ]
+    ordering = ["name"]
 
     def __str__(self):
         return self.name

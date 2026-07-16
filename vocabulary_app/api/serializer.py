@@ -11,17 +11,26 @@ class LanguageSerializer(serializers.ModelSerializer):
 class VocabularyWordSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
-        write_only=True,
-        required=False
+        required=False,
+        allow_null=True,
     )
 
-    category_name = serializers.StringRelatedField(
-        source="category",
-        read_only=False
+    # Writable field
+    language = serializers.PrimaryKeyRelatedField(
+        queryset=Language.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    # Read-only output fields
+    category_name = serializers.CharField(
+        source="category.name",
+        read_only=True,
     )
 
     language_id = serializers.IntegerField(
-        source="category.target_language_id",
+        source="category.target_language.id",
         read_only=True,
     )
 
@@ -45,18 +54,37 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VocabularyWord
-        fields = "__all__"
+        fields = (
+            "id",
+            "category",
+            "language",
+            "category_name",
+            "language_id",
+            "language_name",
+            "source_word",
+            "target_word",
+            "source_tip",
+            "target_tip",
+            "source_sentence",
+            "target_sentence",
+            "source_rank",
+            "target_rank",
+            "created_at",
+            "updated_at",
+        )
         read_only_fields = (
             "id",
             "created_at",
             "updated_at",
+            "category_name",
+            "language_id",
+            "language_name",
         )
 
 
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.IntegerField(
     source="target_language_id",
-    write_only=True,
     )
 
     language_name = serializers.CharField(
