@@ -3,18 +3,32 @@ from django.conf import settings
 
 
 class Language(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
     language_name = models.CharField(
         max_length=100,
-        default="Without"
+        unique=True,
     )
 
     class Meta:
         ordering = ["language_name"]
 
     def __str__(self):
-        return self.language_name
+        return f"{self.language_name}"
+    
+class UserLanguages(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_languages",
+    )
+
+    learning_languages = models.ManyToManyField(
+        Language,
+        related_name="learners",
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.user.username}"
 
 
 class VocabularyCategory(models.Model):
@@ -41,7 +55,7 @@ class VocabularyCategory(models.Model):
     ordering = ["name"]
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 
 class VocabularyWord(models.Model):
