@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'vocabulary_app',
     'quiz_app',
+    'customer_app',
 ]
 
 MIDDLEWARE = [

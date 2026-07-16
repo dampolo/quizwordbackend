@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
+
 class User(AbstractUser):
     class ProfileType(models.TextChoices):
         CUSTOMER = "customer", _("Customer")
@@ -14,18 +15,24 @@ class User(AbstractUser):
 
     # AbstractUser
     # username, first_name, last_name, email,
-    title = models.CharField(max_length=20, choices=TitleChoices)
-    customer_number = models.CharField(max_length=50, unique=True)
+    title = models.CharField(
+        max_length=20,
+        choices=TitleChoices.choices,
+        default=TitleChoices.HERR,
+    )
+    customer_number = models.CharField(max_length=50,
+                                       unique=True,
+                                       blank=True,)
 
     # I overwrite email
     email = models.EmailField(max_length=150, unique=True)
     image = models.ImageField(upload_to='uploads/', blank=True, null=True)
 
     # Location
-    street = models.CharField(max_length=200)
-    street_number = models.CharField(max_length=10)
-    postcode = models.CharField(max_length=20)
-    city = models.CharField(max_length=100)
+    street = models.CharField(max_length=200, blank=True)
+    street_number = models.CharField(max_length=10, blank=True)
+    postcode = models.CharField(max_length=20, blank=True)
+    city = models.CharField(max_length=100, blank=True)
     phone = models.CharField(blank=True, max_length=20, default="")
 
     has_subscription = models.BooleanField(default=False)
@@ -55,6 +62,6 @@ class User(AbstractUser):
 
             # 3. Nur dieses Feld updaten
             super().save(update_fields=["customer_number"])
-    
+
     def __str__(self):
         return f"{self.username} {self.first_name}"
