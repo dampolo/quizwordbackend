@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from vocabulary_app.models import Language
+from vocabulary_app.models import UserLanguages
+
+
+admin.site.register(Language)
+admin.site.register(UserLanguages)

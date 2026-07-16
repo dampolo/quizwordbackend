@@ -20,7 +20,7 @@ router.register(
     VocabularyWordViewSet,
     basename="vocabulary-word"
 )
-router.register(r"languages", LanguageViewSet, basename="language")
+router.register(r"languages", LanguageViewSet, basename="languages")
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -34,6 +34,7 @@ class UserLanguages(models.Model):
 class VocabularyCategory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
+    
     name = models.CharField(max_length=100, default="STANDARD")
 
     target_language = models.ForeignKey(

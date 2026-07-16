@@ -18,7 +18,6 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'city',
             'email',
             'phone',
-            'has_portfolio',
             'has_subscription',
             'is_active',
         ]

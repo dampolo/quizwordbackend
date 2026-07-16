@@ -39,10 +39,6 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    class Meta:
-        model = VocabularyWord
-        fields = "__all__"
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

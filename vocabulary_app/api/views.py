@@ -16,10 +16,10 @@ class LanguageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Language.objects.filter(user=self.request.user)
+        return Language.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
 
 
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):
@@ -45,7 +45,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {
-        "category__target_language__language_name": ["exact"],
+        "target_language__language_name": ["exact"],
     }
     search_fields = ["source_word", "target_word"]
 
@@ -58,26 +58,11 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
         category = serializer.validated_data.pop("category", None)
         language = serializer.validated_data.pop("language", None)
 
-        if category:
-            if category.user != self.request.user:
-                raise PermissionDenied(
-                    "You cannot add words to another user's category."
-                )
-
-            serializer.save(category=category)
-            return
-
-        if language:
-            if language.user != self.request.user:
-                raise PermissionDenied(
-                    "You cannot use another user's language."
-                )
-        else:
+        if not language:
             language, _ = Language.objects.get_or_create(
-                user=self.request.user,
-                language_name="Without",
+            language_name="Without",
             )
-
+        
         category, _ = VocabularyCategory.objects.get_or_create(
             user=self.request.user,
             target_language=language,
