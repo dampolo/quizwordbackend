@@ -6,6 +6,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            'id',
             'customer_number',
             'image',
             'title',
@@ -20,9 +21,11 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'phone',
             'has_subscription',
             'is_active',
+            'created_at',
+            'updated_at',
         ]
 
-        read_only_fields = ['created_at', 'updated_at', 'user', 'customer_number']
+        read_only_fields = ['id','created_at', 'user', 'customer_number']
     
     def validate_post_code(self, value):
         if not value.isdigit():
