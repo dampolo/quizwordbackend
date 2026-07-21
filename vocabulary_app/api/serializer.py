@@ -8,36 +8,30 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = ["id", "language_name"]
         read_only_fields = ["id"]
 
+
 class VocabularyWordSerializer(serializers.ModelSerializer):
+
     category = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
         required=False,
         allow_null=True,
     )
 
-    # Writable field
-    language = serializers.PrimaryKeyRelatedField(
-        queryset=Language.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
-
-    # Read-only output fields
     category_name = serializers.CharField(
         source="category.name",
         read_only=True,
     )
 
+
     language_id = serializers.IntegerField(
         source="category.target_language.id",
         read_only=True,
-    )
+        )
 
     language_name = serializers.CharField(
-        source="category.target_language.language_name",
-        read_only=True,
-    )
+    source="category.target_language.language_name",
+       read_only=True,
+       )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -53,7 +47,6 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "category",
-            "language",
             "category_name",
             "language_id",
             "language_name",
@@ -80,7 +73,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.IntegerField(
-    source="target_language_id",
+        source="target_language_id",
     )
 
     language_name = serializers.CharField(

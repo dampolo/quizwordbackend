@@ -28,7 +28,7 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {"target_language": ["exact"]}
     filterset_fields = {
-        "target_language__language_name": ["exact"],
+        "target_language": ["exact"],
     }
 
     def get_queryset(self):
@@ -45,7 +45,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {
-        "category__target_language__language_name": ["exact"],
+        "category__target_language": ["exact"],
     }
     search_fields = ["source_word", "target_word"]
 
@@ -55,18 +55,17 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
 
 
     def perform_create(self, serializer):
-        category = serializer.validated_data.pop("category", None)
-        language = serializer.validated_data.pop("language", None)
+        category = serializer.validated_data.get("category")
 
-        if not language:
+        if category is None:
             language, _ = Language.objects.get_or_create(
-            language_name="Without",
+                language_name="Without"
             )
-        
-        category, _ = VocabularyCategory.objects.get_or_create(
-            user=self.request.user,
-            target_language=language,
-            name="STANDARD",
-        )
+
+            category, _ = VocabularyCategory.objects.get_or_create(
+                user=self.request.user,
+                target_language=language,
+                name="STANDARD",
+            )
 
         serializer.save(category=category)
