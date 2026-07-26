@@ -69,3 +69,19 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save(category=category)
+    
+    def perform_update(self, serializer):
+        category = serializer.validated_data.get("category")
+
+        if category is None:
+            language, _ = Language.objects.get_or_create(
+                language_name="Without"
+            )
+
+            category, _ = VocabularyCategory.objects.get_or_create(
+                user=self.request.user,
+                target_language=language,
+                name="STANDARD",
+            )
+
+        serializer.save(category=category)
