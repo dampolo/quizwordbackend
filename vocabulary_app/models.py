@@ -40,6 +40,7 @@ class UserLanguages(models.Model):
 class VocabularyCategory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
+    
     category_name = models.CharField(max_length=100, default="STANDARD")
 
     target_language = models.ForeignKey(
@@ -89,10 +90,10 @@ class VocabularyWord(models.Model):
         related_name="translations",
         )
 
-    language = models.ForeignKey(
+    target_language = models.ForeignKey(
         Language,
         on_delete=models.PROTECT,
-        related_name="words",
+        related_name="translations",
         )
 
     source_word = models.CharField(max_length=255)
