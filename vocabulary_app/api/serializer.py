@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language
+from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages
 
 
 class LanguageSerializer(serializers.ModelSerializer):
@@ -8,6 +8,15 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = ["id", "language_name"]
         read_only_fields = ["id"]
 
+    
+class UserLanguageSerializer(serializers.ModelSerializer):
+    native_language = LanguageSerializer(read_only=True)
+    learning_languages = LanguageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserLanguages
+        fields = ["id", "native_language", "learning_languages"]
+        read_only_fields = ["id"]
 
 class VocabularyWordSerializer(serializers.ModelSerializer):
 
@@ -18,7 +27,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
     )
 
     category_name = serializers.CharField(
-        source="category.name",
+        source="concept.categories.category_name",
         read_only=True,
     )
 

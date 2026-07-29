@@ -6,7 +6,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     VocabularyCategoryViewSet,
     VocabularyWordViewSet,
-    LanguageViewSet
+    LanguageViewSet,
+    UserLanguageViewSet
 )
 
 router = DefaultRouter()
@@ -21,6 +22,8 @@ router.register(
     basename="vocabulary-word"
 )
 router.register(r"languages", LanguageViewSet, basename="languages")
+
+router.register(r"user-languages", UserLanguageViewSet, basename="user-languages")
 
 urlpatterns = [
     path("", include(router.urls)),
