@@ -54,7 +54,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     pagination_class = pagination.VocabularyWordsPagination
     filterset_fields = {
-    "concept__categories__target_language": ["exact"],
+    "category__target_language": ["exact"],
     }
     search_fields = ["source_word", "target_word"]
 
@@ -66,10 +66,10 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         source_word = serializer.validated_data["source_word"]
         category = serializer.validated_data.pop("category", None)
-        language_id = serializer.validated_data["target_language"]
+        language = serializer.validated_data["target_language"]
         user_languages = self.request.user.user_languages
 
-        if language_id not in user_languages.learning_languages.all():
+        if language not in user_languages.learning_languages.all():
             raise ValidationError("You are not learning this language.")
 
         # 1. Find an existing concept with the same source word
@@ -83,7 +83,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
 
             # 2. Check whether this concept already has this language
             if concept.translations.filter(
-                target_language=language_id
+                target_language=language
             ).exists():
                 raise ValidationError(
                     "This translation already exists."
@@ -97,12 +97,13 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
         if category is None:
             category, _ = VocabularyCategory.objects.get_or_create(
                 user=self.request.user,
-                target_language=language_id,
+                target_language=language,
                 category_name="STANDARD",
             )
-        concept.categories.add(category)
-
-        serializer.save(concept=concept)
+        serializer.save(
+            concept=concept,
+            category=category,
+            )
 
 
     
@@ -129,9 +130,7 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return VocabularyConcept.objects.filter(
-            user=self.request.user
-        ).prefetch_related("categories")
+        return VocabularyConcept.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

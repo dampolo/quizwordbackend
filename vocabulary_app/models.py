@@ -53,13 +53,13 @@ class VocabularyCategory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["category_name"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "target_language", "category_name"],
                 name="unique_category_per_language",
             )
         ]
-    ordering = ["name"]
 
     def __str__(self):
         return f"{self.category_name}"
@@ -69,12 +69,6 @@ class VocabularyConcept(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="vocabulary_concepts",
-    )
-
-    categories = models.ManyToManyField(
-        VocabularyCategory,
-        blank=True,
-        related_name="concepts",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -90,6 +84,11 @@ class VocabularyWord(models.Model):
         related_name="translations",
         )
 
+    category = models.ForeignKey(
+        VocabularyCategory,
+        on_delete=models.CASCADE,
+        related_name="words"
+    )
     target_language = models.ForeignKey(
         Language,
         on_delete=models.PROTECT,
@@ -113,6 +112,12 @@ class VocabularyWord(models.Model):
 
     class Meta:
         ordering = ["id"]
+        constraints = [
+        models.UniqueConstraint(
+            fields=["concept", "target_language"],
+            name="unique_translation_per_language",
+        )
+    ]
 
     def __str__(self):
         return f"{self.source_word} → {self.target_word}"

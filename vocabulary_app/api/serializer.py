@@ -36,30 +36,23 @@ class UserLanguageSerializer(serializers.ModelSerializer):
 
 
 class VocabularyWordSerializer(serializers.ModelSerializer):
-    concept = serializers.PrimaryKeyRelatedField(
-        queryset=VocabularyConcept.objects.all(),
-        required=False,
-    )
-
-    target_language = serializers.PrimaryKeyRelatedField(
-        queryset=Language.objects.all(),
-        required=False
-    )
-
-    language_name = serializers.CharField(
-        source="language.language_name",
-        read_only=True,
-    )
+    concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
     category = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
-        write_only=True,
         required=False,
         allow_null=True,
     )
 
     category_name = serializers.CharField(
-        source="concept.categories.category_name", read_only=True, )
+        source="category.category_name",
+        read_only=True,
+    )
+
+    language_name = serializers.CharField(
+        source="target_language.language_name",
+        read_only=True,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -94,8 +87,8 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "updated_at",
+            "concept",
             "category_name",
-            "language_id",
             "language_name",
         )
 
@@ -104,6 +97,8 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.IntegerField(
         source="target_language_id",
     )
+
+    words_count = serializers.SerializerMethodField()
 
     language_name = serializers.CharField(
         source="target_language.language_name",
@@ -117,12 +112,20 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
             "language_id",
             "language_name",
             "category_name",
+            "words_count",
             "created_at",
         )
         read_only_fields = (
             "id",
+            "words_count",
             "created_at",
         )
+
+    def get_words_count(self, obj):
+        return VocabularyWord.objects.filter(
+            concept__categories=obj
+        ).count()
+
 
 class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
     language_name = serializers.CharField(
@@ -141,11 +144,6 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
 
 
 class VocabularyConceptSerializer(serializers.ModelSerializer):
-    categories = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=VocabularyCategory.objects.all(),
-        required=False,
-    )
 
     translations = VocabularyWordSimpleSerializer(
         many=True,
@@ -156,7 +154,6 @@ class VocabularyConceptSerializer(serializers.ModelSerializer):
         model = VocabularyConcept
         fields = [
             "id",
-            "categories",
             "translations",
             "created_at",
             "updated_at",
@@ -166,12 +163,3 @@ class VocabularyConceptSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        request = self.context.get("request")
-        if request:
-            self.fields["categories"].queryset = VocabularyCategory.objects.filter(
-                user=request.user
-            )
