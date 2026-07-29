@@ -23,8 +23,7 @@ router.register(
 )
 router.register(r"languages", LanguageViewSet, basename="languages")
 
-router.register(r"user-languages", UserLanguageViewSet, basename="user-languages")
-
 urlpatterns = [
     path("", include(router.urls)),
+    path("user-languages/", UserLanguageViewSet.as_view(), name="user-languages"),
 ]

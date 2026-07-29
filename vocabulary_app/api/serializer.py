@@ -11,11 +11,27 @@ class LanguageSerializer(serializers.ModelSerializer):
     
 class UserLanguageSerializer(serializers.ModelSerializer):
     native_language = LanguageSerializer(read_only=True)
+    native_language_id = serializers.PrimaryKeyRelatedField(
+        source="native_language",
+        queryset=Language.objects.all(),
+        write_only=True,
+    )
+
     learning_languages = LanguageSerializer(many=True, read_only=True)
+    learning_language_ids = serializers.PrimaryKeyRelatedField(
+        source="learning_languages",
+        queryset=Language.objects.all(),
+        many=True,
+        write_only=True,
+    )
 
     class Meta:
         model = UserLanguages
-        fields = ["id", "native_language", "learning_languages"]
+        fields = ["id",
+            "native_language",
+            "native_language_id",
+            "learning_languages",
+            "learning_language_ids"]
         read_only_fields = ["id"]
 
 class VocabularyWordSerializer(serializers.ModelSerializer):

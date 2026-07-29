@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages
 from rest_framework.exceptions import PermissionDenied
 from vocabulary_app import pagination
+from rest_framework import generics
 
 from vocabulary_app.api.serializer import (
     VocabularyCategorySerializer,
@@ -23,16 +24,12 @@ class LanguageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
-class UserLanguageViewSet(viewsets.ModelViewSet):
+class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserLanguageSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return UserLanguages.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save()
-
+    def get_object(self):
+        return UserLanguages.objects.get(user=self.request.user)
 
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyCategorySerializer
