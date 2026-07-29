@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages
+from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 
 
 class LanguageSerializer(serializers.ModelSerializer):
@@ -119,3 +119,34 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
             "id",
             "created_at",
         )
+
+
+class VocabularyConceptSerializer(serializers.ModelSerializer):
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=VocabularyCategory.objects.all(),
+        required=False,
+    )
+
+    class Meta:
+        model = VocabularyConcept
+        fields = [
+            "id",
+            "categories",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+        if request:
+            self.fields["categories"].queryset = VocabularyCategory.objects.filter(
+                user=request.user
+            )

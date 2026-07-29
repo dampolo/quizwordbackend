@@ -7,7 +7,8 @@ from .views import (
     VocabularyCategoryViewSet,
     VocabularyWordViewSet,
     LanguageViewSet,
-    UserLanguageViewSet
+    UserLanguageViewSet,
+    VocabularyConceptViewSet
 )
 
 router = DefaultRouter()
@@ -22,6 +23,11 @@ router.register(
     basename="vocabulary-word"
 )
 router.register(r"languages", LanguageViewSet, basename="languages")
+router.register(
+    r"concepts",
+    VocabularyConceptViewSet,
+    basename="concepts",
+)
 
 urlpatterns = [
     path("", include(router.urls)),
