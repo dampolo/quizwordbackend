@@ -38,7 +38,7 @@ class UserLanguageSerializer(serializers.ModelSerializer):
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
-    category = serializers.PrimaryKeyRelatedField(
+    category_id = serializers.PrimaryKeyRelatedField(
         queryset=VocabularyCategory.objects.all(),
         required=False,
         allow_null=True,
@@ -59,7 +59,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
         request = self.context.get("request")
         if request:
-            self.fields["category"].queryset = VocabularyCategory.objects.filter(
+            self.fields["category_id"].queryset = VocabularyCategory.objects.filter(
                 user=request.user
             )
 
@@ -68,7 +68,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "concept",
-            "category",
+            "category_id",
             "category_name",
             "target_language",
             "language_name",
