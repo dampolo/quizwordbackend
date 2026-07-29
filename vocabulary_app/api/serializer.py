@@ -94,8 +94,9 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
 
 class VocabularyCategorySerializer(serializers.ModelSerializer):
-    language_id = serializers.IntegerField(
-        source="target_language_id",
+    language_id = serializers.PrimaryKeyRelatedField(
+        source="target_language",
+         queryset=Language.objects.all(),
     )
 
     words_count = serializers.SerializerMethodField()
@@ -123,7 +124,7 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
 
     def get_words_count(self, obj):
         return VocabularyWord.objects.filter(
-            concept__categories=obj
+            category=obj
         ).count()
 
 
