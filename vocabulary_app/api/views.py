@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language
 from rest_framework.exceptions import PermissionDenied
+from vocabulary_app import pagination
 
 from vocabulary_app.api.serializer import (
     VocabularyCategorySerializer,
@@ -27,9 +28,6 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {"target_language": ["exact"]}
-    filterset_fields = {
-        "target_language": ["exact"],
-    }
 
     def get_queryset(self):
         return VocabularyCategory.objects.filter(
@@ -44,6 +42,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyWordSerializer
     # permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    pagination_class = pagination.VocabularyWordsPagination
     filterset_fields = {
         "category__target_language": ["exact"],
     }
