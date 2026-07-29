@@ -21,6 +21,12 @@ class UserLanguages(models.Model):
         related_name="user_languages",
     )
 
+    native_language = models.ForeignKey(
+        Language,
+        on_delete=models.PROTECT,
+        related_name="native_speakers",
+    )
+
     learning_languages = models.ManyToManyField(
         Language,
         related_name="learners",
@@ -34,8 +40,7 @@ class UserLanguages(models.Model):
 class VocabularyCategory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
-    
-    name = models.CharField(max_length=100, default="STANDARD")
+    category_name = models.CharField(max_length=100, default="STANDARD")
 
     target_language = models.ForeignKey(
         Language,
@@ -49,22 +54,46 @@ class VocabularyCategory(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "target_language", "name"],
+                fields=["user", "target_language", "category_name"],
                 name="unique_category_per_language",
             )
         ]
     ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.category_name}"
 
+class VocabularyConcept(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vocabulary_concepts",
+    )
+
+    categories = models.ManyToManyField(
+        VocabularyCategory,
+        blank=True,
+        related_name="concepts",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Concept {self.id}"
 
 class VocabularyWord(models.Model):
-    category = models.ForeignKey(
-        VocabularyCategory,
+    concept = models.ForeignKey(
+        VocabularyConcept,
         on_delete=models.CASCADE,
-        related_name="words"
-    )
+        related_name="translations",
+        )
+
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.PROTECT,
+        related_name="words",
+        )
 
     source_word = models.CharField(max_length=255)
     target_word = models.CharField(max_length=255)
