@@ -239,24 +239,63 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
             "target_word",
         ]
 
-
+# GET
 class VocabularyConceptSerializer(serializers.ModelSerializer):
-
-    translations = VocabularyWordSerializer(
-        many=True,
-        read_only=True,
-    )
+    translations = serializers.SerializerMethodField()
 
     class Meta:
         model = VocabularyConcept
-        fields = [
+        fields = (
             "id",
             "translations",
             "created_at",
             "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "created_at",
-            "updated_at",
-        ]
+        )
+
+    def get_translations(self, obj):
+        request = self.context["request"]
+
+        language = request.query_params.get("language")
+        native_language = request.user.user_languages.native_language
+
+        # Be default user will see his first choosen languages which he want to learn.
+        if language is None:
+            learning_language = request.user.user_languages.learning_languages.first()
+
+            if learning_language is None:
+                return []
+
+            language = learning_language.id
+
+        translations = obj.translations.filter(
+            language_id__in=[native_language.id, int(language)]   # replace 1 with native_language_id later
+        )
+
+        return VocabularyWordSerializer(translations, many=True).data
+
+class TranslationUpdateSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    word = serializers.CharField()
+    tip = serializers.CharField(required=False, allow_blank=True)
+    sentence = serializers.CharField(required=False, allow_blank=True)
+    category_id = serializers.IntegerField(required=False)
+
+
+class VocabularyConceptUpdateSerializer(serializers.Serializer):
+    translations = TranslationUpdateSerializer(many=True)
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        for data in validated_data["translations"]:
+            word = instance.translations.get(id=data["id"])
+
+            word.word = data["word"]
+            word.tip = data.get("tip", "")
+            word.sentence = data.get("sentence", "")
+
+            if "category_id" in data:
+                word.category_id = data["category_id"]
+
+            word.save()
+
+        return instance

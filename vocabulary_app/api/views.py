@@ -13,7 +13,8 @@ from vocabulary_app.api.serializer import (
     LanguageSerializer,
     UserLanguageSerializer,
     VocabularyConceptSerializer,
-    VocabularyEntryCreateSerializer
+    VocabularyEntryCreateSerializer,
+    VocabularyConceptUpdateSerializer
 )
 
 
@@ -74,15 +75,23 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return VocabularyConcept.objects.filter(
-            user=self.request.user
-        )
+        queryset = VocabularyConcept.objects.filter(
+        user=self.request.user
+    )
+
+        language = self.request.query_params.get("language")
+
+        if language:
+            queryset = queryset.filter(
+                translations__language_id=language
+            )
+
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == "create":
             return VocabularyEntryCreateSerializer
+        if self.action in ["update", "partial_update"]:
+            return VocabularyConceptUpdateSerializer
 
         return VocabularyConceptSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
