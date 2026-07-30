@@ -39,7 +39,9 @@ class UserLanguages(models.Model):
 
 class VocabularyCategory(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE)
+                             on_delete=models.CASCADE,
+                             related_name="vocabulary_categories",
+                             )
     
     category_name = models.CharField(max_length=100, default="STANDARD")
 
@@ -82,42 +84,35 @@ class VocabularyWord(models.Model):
         VocabularyConcept,
         on_delete=models.CASCADE,
         related_name="translations",
-        )
-
-    category = models.ForeignKey(
-        VocabularyCategory,
-        on_delete=models.CASCADE,
-        related_name="words"
     )
-    target_language = models.ForeignKey(
+
+    language = models.ForeignKey(
         Language,
         on_delete=models.PROTECT,
         related_name="translations",
-        )
+    )
 
-    source_word = models.CharField(max_length=255)
-    target_word = models.CharField(max_length=255)
+    category = models.ForeignKey(
+        VocabularyCategory,
+        on_delete=models.SET_NULL,
+        related_name="words",
+        null=True,
+        blank=True,
+    )
 
-    source_tip = models.CharField(max_length=255, blank=True)
-    target_tip = models.CharField(max_length=255, blank=True)
-
-    source_sentence = models.TextField(blank=True)
-    target_sentence = models.TextField(blank=True)
-
-    source_rank = models.IntegerField(default=0)
-    target_rank = models.IntegerField(default=0)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    word = models.CharField(max_length=255)
+    tip = models.CharField(max_length=255, blank=True)
+    sentence = models.TextField(blank=True)
+    rank = models.IntegerField(default=0)
 
     class Meta:
         ordering = ["id"]
         constraints = [
-        models.UniqueConstraint(
-            fields=["concept", "target_language"],
-            name="unique_translation_per_language",
-        )
-    ]
+            models.UniqueConstraint(
+                fields=["concept", "language"],
+                name="unique_translation_per_language",
+            )
+        ]
 
     def __str__(self):
-        return f"{self.source_word} → {self.target_word}"
+        return f"{self.word} ({self.language})"
