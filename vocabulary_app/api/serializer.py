@@ -54,7 +54,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
     )
 
     category_name = serializers.CharField(
-        source="category.language_name",
+        source="category.category_name",
         read_only=True,
     )
 
