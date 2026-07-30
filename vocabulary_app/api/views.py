@@ -12,7 +12,8 @@ from vocabulary_app.api.serializer import (
     VocabularyWordSerializer,
     LanguageSerializer,
     UserLanguageSerializer,
-    VocabularyConceptSerializer
+    VocabularyConceptSerializer,
+    VocabularyEntryCreateSerializer
 )
 
 
@@ -47,90 +48,41 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-
+# CRUD word
 class VocabularyWordViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyWordSerializer
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     pagination_class = pagination.VocabularyWordsPagination
+
+    search_fields = ["word"]
     filterset_fields = {
-    "category__target_language": ["exact"],
+        "language": ["exact"],
+        "category": ["exact"],
+        "category__target_language": ["exact"],
     }
-    search_fields = ["source_word", "target_word"]
 
     def get_queryset(self):
         return VocabularyWord.objects.filter(
-            concept__user=self.request.user)
-
-
-    def perform_create(self, serializer):
-        source_word = serializer.validated_data["source_word"]
-        category = serializer.validated_data.pop("category", None)
-        language = serializer.validated_data["target_language"]
-        user_languages = self.request.user.user_languages
-
-        if language not in user_languages.learning_languages.all():
-            raise ValidationError("You are not learning this language.")
-
-        # 1. Find an existing concept with the same source word
-        translation = VocabularyWord.objects.filter(
-            concept__user=self.request.user,
-            source_word__iexact=source_word,
-            ).first()
-
-        if translation:
-            concept = translation.concept
-
-            # 2. Check whether this concept already has this language
-            if concept.translations.filter(
-                target_language=language
-            ).exists():
-                raise ValidationError(
-                    "This translation already exists."
-                )
-        else:
-            # 3. Create a new concept
-            concept = VocabularyConcept.objects.create(
-            user=self.request.user
-            )
-        
-        if category is None:
-            category, _ = VocabularyCategory.objects.get_or_create(
-                user=self.request.user,
-                target_language=language,
-                category_name="STANDARD",
-            )
-        serializer.save(
-            concept=concept,
-            category=category,
-            )
-
-
+            concept__user=self.request.user
+        )
     
-    def perform_update(self, serializer):
-        category = serializer.validated_data.get("category")
-
-        if category is None:
-            language, _ = Language.objects.get_or_create(
-                language_name="Without"
-            )
-
-            category, _ = VocabularyCategory.objects.get_or_create(
-                user=self.request.user,
-                target_language=language,
-                name="STANDARD",
-            )
-
-        serializer.save(category=category)
-
 
 
 class VocabularyConceptViewSet(viewsets.ModelViewSet):
-    serializer_class = VocabularyConceptSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return VocabularyConcept.objects.filter(user=self.request.user)
+        return VocabularyConcept.objects.filter(
+            user=self.request.user
+        )
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return VocabularyEntryCreateSerializer
+
+        return VocabularyConceptSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
