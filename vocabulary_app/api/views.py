@@ -16,6 +16,7 @@ from vocabulary_app.api.serializer import (
     VocabularyEntryCreateSerializer,
     VocabularyConceptUpdateSerializer
 )
+from django.db.models import Count, Q
 
 
 class LanguageViewSet(viewsets.ModelViewSet):
@@ -70,23 +71,54 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
         )
     
 
-
 class VocabularyConceptViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
+    pagination_class = pagination.VocabularyWordsPagination
 
     def get_queryset(self):
-        queryset = VocabularyConcept.objects.filter(
-        user=self.request.user
-    )
+        user = self.request.user
+        queryset = VocabularyConcept.objects.filter(user=user)
+
+        native_language = user.user_languages.native_language
+        language = self.request.query_params.get("language")
+
+        if language is None:
+            learning = user.user_languages.learning_languages.first()
+
+            if learning is None:
+                return queryset.none()
+
+            language = learning.id
+
+        return (
+            queryset.annotate(
+                translation_count=Count(
+                    "translations",
+                    filter=Q(
+                        translations__language_id__in=[
+                            native_language.id,
+                            int(language),
+                        ]
+                    ),
+                    distinct=True,
+                )
+            )
+            .filter(translation_count=2)
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
 
         language = self.request.query_params.get("language")
 
-        if language:
-            queryset = queryset.filter(
-                translations__language_id=language
-            )
+        if language is None:
+            learning = self.request.user.user_languages.learning_languages.first()
+            language = learning.id if learning else None
+        else:
+            language = int(language)
 
-        return queryset.distinct()
+        context["language"] = language
+        return context
 
     def get_serializer_class(self):
         if self.action == "create":

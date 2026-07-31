@@ -253,22 +253,17 @@ class VocabularyConceptSerializer(serializers.ModelSerializer):
         )
 
     def get_translations(self, obj):
-        request = self.context["request"]
+        user_languages = self.context["request"].user.user_languages
+        language = self.context["language"]
 
-        language = request.query_params.get("language")
-        native_language = request.user.user_languages.native_language
-
-        # Be default user will see his first choosen languages which he want to learn.
         if language is None:
-            learning_language = request.user.user_languages.learning_languages.first()
-
-            if learning_language is None:
-                return []
-
-            language = learning_language.id
+            return []
 
         translations = obj.translations.filter(
-            language_id__in=[native_language.id, int(language)]   # replace 1 with native_language_id later
+            language_id__in=[
+                user_languages.native_language.id,
+                language,
+            ]
         )
 
         return VocabularyWordSerializer(translations, many=True).data
