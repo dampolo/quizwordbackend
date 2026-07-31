@@ -2,6 +2,7 @@ from rest_framework import serializers
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 from django.db import transaction
 
+
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
@@ -35,6 +36,8 @@ class UserLanguageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 # GET/PATCH/DELETE
+
+
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -57,7 +60,6 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
         source="category.category_name",
         read_only=True,
     )
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -197,6 +199,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         return concept
 
+
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.PrimaryKeyRelatedField(
         source="target_language",
@@ -248,6 +251,8 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
         ]
 
 # GET
+
+
 class VocabularyConceptSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
@@ -276,12 +281,22 @@ class VocabularyConceptSerializer(serializers.ModelSerializer):
 
         return VocabularyWordSerializer(translations, many=True).data
 
+
 class TranslationUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    language = serializers.PrimaryKeyRelatedField(
+        queryset=Language.objects.all(),
+        required=False,
+    )
     word = serializers.CharField()
     tip = serializers.CharField(required=False, allow_blank=True)
     sentence = serializers.CharField(required=False, allow_blank=True)
-    category_id = serializers.IntegerField(required=False)
+    category_id = serializers.PrimaryKeyRelatedField(
+        source="category",
+        queryset=VocabularyCategory.objects.all(),
+        required=False,
+        allow_null=True,
+    )
 
 
 class VocabularyConceptUpdateSerializer(serializers.Serializer):
@@ -289,16 +304,61 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        request = self.context["request"]
+
         for data in validated_data["translations"]:
-            word = instance.translations.get(id=data["id"])
+            translation = instance.translations.get(id=data["id"])
 
-            word.word = data["word"]
-            word.tip = data.get("tip", "")
-            word.sentence = data.get("sentence", "")
+            language = data.get("language", translation.language)
 
-            if "category_id" in data:
-                word.category_id = data["category_id"]
+            category = data.get("category", translation.category)
 
-            word.save()
+            if category and category.user != request.user:
+                raise serializers.ValidationError({
+                    "category_id": "This category does not belong to you."
+                })
+
+            print(language, type(language))
+            print(category, type(category))
+            print(category.target_language, type(category.target_language))
+
+            if category and category.target_language != language:
+                raise serializers.ValidationError({
+                    "category_id": (
+                        "The category language must match "
+                        "the translation language."
+                    )
+                })
+
+            # The concept cannot contain the same language twice.
+            if (
+                instance.translations
+                .exclude(id=translation.id)
+                .filter(language=language)
+                .exists()
+            ):
+                raise serializers.ValidationError({
+                    "language": (
+                        "This concept already has a translation "
+                        "in this language."
+                    )
+                })
+
+            translation.language = language
+            translation.category = category
+            translation.word = data.get(
+                "word",
+                translation.word
+            )
+            translation.tip = data.get(
+                "tip",
+                translation.tip
+            )
+            translation.sentence = data.get(
+                "sentence",
+                translation.sentence
+            )
+
+            translation.save()
 
         return instance
