@@ -79,6 +79,9 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = VocabularyConcept.objects.filter(user=user)
 
+        if self.action != "list":
+            return queryset
+
         native_language = user.user_languages.native_language
         language = self.request.query_params.get("language")
 
