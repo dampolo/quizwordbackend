@@ -2,7 +2,6 @@ from rest_framework import serializers
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 from django.db import transaction
 
-
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
@@ -36,8 +35,6 @@ class UserLanguageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 # GET/PATCH/DELETE
-
-
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -60,6 +57,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
         source="category.category_name",
         read_only=True,
     )
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,11 +106,11 @@ class TranslationSerializer(serializers.Serializer):
 # POST
 class VocabularyEntryCreateSerializer(serializers.Serializer):
     category = serializers.PrimaryKeyRelatedField(
-        queryset=VocabularyCategory.objects.all(),
-        required=False,
-        allow_null=True,
-        write_only=True,
-    )
+    queryset=VocabularyCategory.objects.all(),
+    required=False,
+    allow_null=True,
+    write_only=True,
+)
     translations = TranslationSerializer(many=True)
 
     def create(self, validated_data):
@@ -199,11 +197,10 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         return concept
 
-
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.PrimaryKeyRelatedField(
         source="target_language",
-        queryset=Language.objects.all(),
+         queryset=Language.objects.all(),
     )
 
     words_count = serializers.SerializerMethodField()
@@ -251,8 +248,6 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
         ]
 
 # GET
-
-
 class VocabularyConceptSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
@@ -280,7 +275,6 @@ class VocabularyConceptSerializer(serializers.ModelSerializer):
         )
 
         return VocabularyWordSerializer(translations, many=True).data
-
 
 class TranslationUpdateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
