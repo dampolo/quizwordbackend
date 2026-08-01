@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 from rest_framework.exceptions import PermissionDenied
 from vocabulary_app import pagination
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.validators import ValidationError
 from rest_framework.response import Response
 
@@ -33,8 +33,20 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserLanguageSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
-        return UserLanguages.objects.get(user=self.request.user)
+    def get(self, request, *args, **kwargs):
+        try:
+            instance = UserLanguages.objects.get(user=request.user)
+        except UserLanguages.DoesNotExist:
+            return Response({
+                "native_language": None,
+                "learning_languages": [],
+                "languages_active": False,
+            },
+            status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):

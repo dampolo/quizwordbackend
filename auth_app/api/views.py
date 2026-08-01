@@ -19,6 +19,7 @@ from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
+from vocabulary_app.models import UserLanguages
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -264,7 +265,7 @@ class UserLanguageStatus:
     def languages_active(user):
         try:
             user_languages = user.user_languages
-        except AttributeError:
+        except UserLanguages.DoesNotExist:
             return False
 
         has_native = user_languages.native_language is not None
