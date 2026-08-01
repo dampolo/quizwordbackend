@@ -311,16 +311,18 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
 
             language = data.get("language", translation.language)
 
-            category = data.get("category", translation.category)
+            category = data.get("category")
 
+            if category is None:
+                category, _ = VocabularyCategory.objects.get_or_create(
+                    user=request.user,
+                    target_language=language,
+                    category_name="STANDARD",
+                )
             if category and category.user != request.user:
                 raise serializers.ValidationError({
                     "category_id": "This category does not belong to you."
                 })
-
-            print(language, type(language))
-            print(category, type(category))
-            print(category.target_language, type(category.target_language))
 
             if category and category.target_language != language:
                 raise serializers.ValidationError({
