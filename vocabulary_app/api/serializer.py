@@ -36,8 +36,6 @@ class UserLanguageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 # GET/PATCH/DELETE
-
-
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
