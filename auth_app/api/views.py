@@ -121,7 +121,8 @@ class MeView(APIView):
         return Response({
             'id': request.user.id,
             'username': request.user.username,
-            'role': request.user.role
+            'role': request.user.role,
+            "languages_active": UserLanguageStatus.languages_active(request.user)
         })
 
 
@@ -257,3 +258,16 @@ class VerifyEmailView(APIView):
             {"message": "Email successfully verified"},
             status=status.HTTP_200_OK
         )
+
+class UserLanguageStatus:
+    @staticmethod
+    def languages_active(user):
+        try:
+            user_languages = user.user_languages
+        except AttributeError:
+            return False
+
+        has_native = user_languages.native_language is not None
+        has_learning = user_languages.learning_languages.exists()
+
+        return has_native and has_learning
