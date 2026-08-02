@@ -19,7 +19,7 @@ from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
-from vocabulary_app.models import UserLanguages
+from auth_app.user_language_status import UserLanguageStatus
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -56,7 +56,10 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         refresh = serializer.validated_data['refresh']
         access = serializer.validated_data['access']
 
-        response = Response({'message': 'Login erfolgreich'})
+        response = Response({
+            "message": "Login erfolgreich",
+            "languages_active": UserLanguageStatus.languages_active(serializer.user),
+        })
 
         response.set_cookie(
             key='access_token',
@@ -102,10 +105,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         access_token = serializer.validated_data.get("access")
 
-        response = Response({
-            "message": "Login erfolgreich",
-            "languages_active": UserLanguageStatus.languages_active(user),
-        })
+        response = Response({'message': 'Access Token refreshed'})
 
         response.set_cookie(
             key='access_token',
@@ -262,16 +262,3 @@ class VerifyEmailView(APIView):
             {"message": "Email successfully verified"},
             status=status.HTTP_200_OK
         )
-
-class UserLanguageStatus:
-    @staticmethod
-    def languages_active(user):
-        try:
-            user_languages = user.user_languages
-        except UserLanguages.DoesNotExist:
-            return False
-
-        has_native = user_languages.native_language is not None
-        has_learning = user_languages.learning_languages.exists()
-
-        return has_native and has_learning

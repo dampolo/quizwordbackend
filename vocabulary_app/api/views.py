@@ -18,6 +18,7 @@ from vocabulary_app.api.serializer import (
     VocabularyConceptUpdateSerializer
 )
 from django.db.models import Count, Q
+from auth_app.user_language_status import UserLanguageStatus
 
 class LanguageViewSet(viewsets.ModelViewSet):
     serializer_class = LanguageSerializer
@@ -38,8 +39,6 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
             instance = UserLanguages.objects.get(user=request.user)
         except UserLanguages.DoesNotExist:
             return Response({
-                "native_language": None,
-                "learning_languages": [],
                 "languages_active": False,
             },
             status=status.HTTP_200_OK,
@@ -61,7 +60,16 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
+        if not UserLanguageStatus.languages_active(self.request.user):
+            raise ValidationError({
+                "languages": (
+                    "Please choose your native language and at least "
+                    "one learning language first."
+                )
+            })
         serializer.save(user=self.request.user)
+
+    
 
 # CRUD word
 class VocabularyWordViewSet(viewsets.ModelViewSet):
@@ -95,10 +103,10 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
         if self.action != "list":
             return queryset
 
-        # user_languages = UserLanguages.objects.filter(user=user).first()
+        user_languages = UserLanguages.objects.filter(user=user).first()
 
-        # if user_languages is None:
-        #     return queryset.none()
+        if user_languages is None:
+            return queryset.none()
 
         native_language = user.user_languages.native_language
         language = self.request.query_params.get("language")
@@ -133,14 +141,21 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
         language = self.request.query_params.get("language")
 
         if language is None:
-            learning = self.request.user.user_languages.learning_languages.first()
-            language = learning.id if learning else None
+            user_languages = UserLanguages.objects.filter(
+                user=self.request.user
+            ).first()
+
+            if user_languages is None:
+                language = None
+            else:
+                learning = user_languages.learning_languages.first()
+                language = learning.id if learning else None
         else:
             language = int(language)
 
         context["language"] = language
         return context
-
+    
     def get_serializer_class(self):
         if self.action == "create":
             return VocabularyEntryCreateSerializer

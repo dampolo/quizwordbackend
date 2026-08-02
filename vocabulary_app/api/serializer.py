@@ -263,8 +263,6 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
         ]
 
 # GET
-
-
 class VocabularyConceptSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
