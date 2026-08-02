@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 from django.db import transaction
-
+from auth_app.user_language_status import UserLanguageStatus
 
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -113,6 +113,20 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 )
     translations = TranslationSerializer(many=True)
 
+    def validate(self, attrs):
+        user = self.context["request"].user
+
+        if not UserLanguageStatus.languages_active(user):
+            raise serializers.ValidationError({
+                "languages": (
+                    "Please choose your native language and at least "
+                    "one learning language before creating a word."
+                ),
+                "code": "LANGUAGES_NOT_CONFIGURED",
+            })
+
+        return attrs
+
     def create(self, validated_data):
         request = self.context["request"]
         user = request.user
@@ -120,7 +134,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         user_languages = user.user_languages
         native_language = user_languages.native_language
-        category = validated_data["category"]
+        category = validated_data.get["category"]
 
         native_item = next(
             (

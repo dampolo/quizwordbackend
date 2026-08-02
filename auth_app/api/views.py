@@ -102,7 +102,10 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         access_token = serializer.validated_data.get("access")
 
-        response = Response({'message': 'Access Token refreshed'})
+        response = Response({
+            "message": "Login erfolgreich",
+            "languages_active": UserLanguageStatus.languages_active(user),
+        })
 
         response.set_cookie(
             key='access_token',

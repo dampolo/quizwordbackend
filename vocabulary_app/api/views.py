@@ -42,7 +42,7 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
                 "learning_languages": [],
                 "languages_active": False,
             },
-            status=status.HTTP_404_NOT_FOUND,
+            status=status.HTTP_200_OK,
             )
 
         serializer = self.get_serializer(instance)
@@ -94,6 +94,11 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
 
         if self.action != "list":
             return queryset
+
+        # user_languages = UserLanguages.objects.filter(user=user).first()
+
+        # if user_languages is None:
+        #     return queryset.none()
 
         native_language = user.user_languages.native_language
         language = self.request.query_params.get("language")
