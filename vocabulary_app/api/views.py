@@ -34,9 +34,12 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserLanguageSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        return UserLanguages.objects.get(user=self.request.user)
+
     def get(self, request, *args, **kwargs):
         try:
-            instance = UserLanguages.objects.get(user=request.user)
+            instance = self.get_object()
         except UserLanguages.DoesNotExist:
             return Response({
                 "languages_active": False,
@@ -47,6 +50,23 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = UserLanguages.objects.get(user=request.user)
+
+            serializer = self.get_serializer(
+                instance,
+                data=request.data,
+                partial=True,
+            )
+
+        except UserLanguages.DoesNotExist:
+            serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+
+        return Response(serializer.data)
 
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyCategorySerializer

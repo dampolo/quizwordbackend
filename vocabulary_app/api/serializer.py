@@ -19,12 +19,14 @@ class UserLanguageSerializer(serializers.ModelSerializer):
     )
 
     learning_languages = LanguageSerializer(many=True, read_only=True)
-    learning_language_ids = serializers.PrimaryKeyRelatedField(
+    learning_languages_id = serializers.PrimaryKeyRelatedField(
         source="learning_languages",
         queryset=Language.objects.all(),
         many=True,
         write_only=True,
     )
+    languages_active = serializers.SerializerMethodField()
+
 
     class Meta:
         model = UserLanguages
@@ -32,8 +34,30 @@ class UserLanguageSerializer(serializers.ModelSerializer):
                   "native_language",
                   "native_language_id",
                   "learning_languages",
-                  "learning_language_ids"]
+                  "learning_languages_id",
+                    "languages_active"
+                  ]
         read_only_fields = ["id"]
+
+    def get_languages_active(self, obj):
+        return UserLanguageStatus.languages_active(obj.user)
+
+    def create(self, validated_data):
+        learning_languages = validated_data.pop("learning_languages", [])
+        instance = UserLanguages.objects.create(**validated_data)
+        instance.learning_languages.set(learning_languages)
+        return instance
+
+    def update(self, instance, validated_data):
+        learning_languages = validated_data.pop("learning_languages", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if learning_languages is not None:
+            instance.learning_languages.set(learning_languages)
+
+        return instance
 
 # GET/PATCH/DELETE
 class VocabularyWordSerializer(serializers.ModelSerializer):
