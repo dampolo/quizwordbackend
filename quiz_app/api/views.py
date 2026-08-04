@@ -11,7 +11,7 @@ from quiz_app.api.serializer import (
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from vocabulary_app.models import VocabularyWord
+from vocabulary_app.models import VocabularyWord, VocabularyConcept
 
 # Use can see all his quizes
 class QuizViewSet(viewsets.ModelViewSet):
@@ -61,6 +61,9 @@ class QuizSubmitAPIView(APIView):
 
         direction=request.data.get("direction")
 
+        target_language = quiz.target_language
+        native_language = quiz.native_language
+
         answers = request.data.get("answers", [])
 
         attempt = QuizAttempt.objects.create(
@@ -71,36 +74,46 @@ class QuizSubmitAPIView(APIView):
         results = []
 
         for answer in answers:
-            word_id = answer.get("id")
+            concept_id = answer.get("id")
             user_answer = answer.get("answer", "")
 
-            word = VocabularyWord.objects.get(
-                id=word_id,
-                category__user=request.user
+            concept = VocabularyConcept.objects.get(
+                id=concept_id,
+                user=request.user
+            )
+
+            source_word = concept.translations.get(
+                language=native_language
+            )
+
+            target_word = concept.translations.get(
+                language=target_language
             )
 
             if direction == QuizAttempt.Direction.FORWARD:
-                correct_answer = word.target_word
+                correct_answer = target_word.word
+                rank_word = target_word
             else:
-                correct_answer = word.source_word
+                correct_answer = source_word.word
+                rank_word = source_word
 
             is_correct = correct_answer == user_answer
 
             QuizAnswer.objects.create(
                 attempt=attempt,
-                word=word,
+                concept=concept,
                 user_answer=user_answer,
                 correct_answer=correct_answer,
                 is_correct=is_correct
             )
 
-            UpdateRank.update_rank(word, is_correct, direction);
+            UpdateRank.update_rank(rank_word, is_correct, direction);
 
             results.append({
-                "word_id": word.id,
-                "source_word": word.source_word,
-                "user_answer": correct_answer,
-                "correct_answer": word.target_word,
+                "word_id": concept.id,
+                "source_word": source_word.word,
+                "user_answer": user_answer,
+                "correct_answer": correct_answer,
                 "is_correct": is_correct,
             })
 
@@ -121,13 +134,13 @@ class UpdateRank:
     def update_rank(word, is_correct, direction):
         if direction == QuizAttempt.Direction.FORWARD:
             if is_correct:
-                word.target_rank += 1
+                word.rank += 1
             else:
-                word.target_rank -= 1
-            word.save(update_fields=["target_rank"])
+                word.rank -= 1
+            word.save(update_fields=["rank"])
         else:
             if is_correct:
                 word.source_rank += 1
             else:
                 word.source_rank -= 1
-            word.save(update_fields=["source_rank"])
+            word.save(update_fields=["rank"])
