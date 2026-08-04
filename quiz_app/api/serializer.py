@@ -1,8 +1,42 @@
 from rest_framework import serializers
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
-from vocabulary_app.api.serializer import VocabularyWordSerializer
+from vocabulary_app.api.serializer import VocabularyConceptSerializer
 from vocabulary_app.models import VocabularyConcept, Language
+
+
+# GET for quiz:
+class GetQuizSerializer(serializers.ModelSerializer):
+    quiz_id = serializers.IntegerField(source="id", read_only=True)
+    concepts = serializers.SerializerMethodField()
+    concepts_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Quiz
+        fields = (
+            "quiz_id",
+            "quiz_name",
+            "target_language",
+            "concepts",
+            "concepts_count",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_concepts(self, obj):
+        serializer = VocabularyConceptSerializer(
+            obj.concepts.all(),
+            many=True,
+            context={
+                "request": self.context["request"],
+                "language": obj.target_language.id,
+            },
+        )
+        return serializer.data
+
+    def get_concepts_count(self, obj):
+        return obj.concepts.count()
+
 
 class QuizSerializer(serializers.ModelSerializer):
     target_language = serializers.PrimaryKeyRelatedField(
@@ -17,8 +51,7 @@ class QuizSerializer(serializers.ModelSerializer):
 
     concepts_count = serializers.SerializerMethodField()
 
-    answers = VocabularyWordSerializer(
-        source="concept",
+    answers = VocabularyConceptSerializer(
         many=True,
         read_only=True
     )

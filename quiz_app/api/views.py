@@ -4,7 +4,8 @@ from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 from quiz_app.api.serializer import (
     QuizSerializer,
     QuizAttemptDetailSerializer,
-    QuizAttemptListSerializer
+    QuizAttemptListSerializer,
+    GetQuizSerializer
 )
 
 from django.utils import timezone
@@ -23,6 +24,12 @@ class QuizViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            return GetQuizSerializer
+        return QuizSerializer
+
+
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
@@ -39,6 +46,9 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
             return QuizAttemptListSerializer
 
         return QuizAttemptDetailSerializer
+
+
+
 
 class QuizSubmitAPIView(APIView):
     permission_classes = [IsAuthenticated]
