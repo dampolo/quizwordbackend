@@ -188,6 +188,26 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Where collectstatic will put files in production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Additional dirs for development
+STATICFILES_DIRS = [
+    BASE_DIR / "static/",  # IMPORTANT
+]
+
+# This if for:
+# -forgot password
+# -reset password
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = env("EMAIL")
+EMAIL_HOST_PASSWORD = env("START_IN_KRYPTO")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_API = env("MAIN_API")
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

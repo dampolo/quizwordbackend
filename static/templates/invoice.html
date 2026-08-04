@@ -1,0 +1,97 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice</title>
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+  </head>
+  <body>
+    <section>
+      <div class="invoice-container">
+        <header class="invoice-header">
+          <div class="company-info">
+            <h1>{{ invoice.company_name }}</h1>
+            <p>
+              {{ invoice.company_street }} {{ invoice.company_street_number }}<br />{{ invoice.company_postcode }} {{ invoice.company_city }}
+            </p>
+          </div>
+          {% comment %} <img class="logo" src="{{ invoice.company_logo.url }}" alt="logo" /> {% endcomment %}
+          <div class="invoice-info">
+            <h2>RECHNUNG</h2>
+            <p>Rechnung Nr.: {{ invoice.invoice_number }}</p>
+            <p>Kundennr.: {{ invoice.user_customer_number }}</p>
+            <p>Date: {{ invoice.created_at|date:"d.m.Y" }}</p>
+          </div>
+        </header>
+
+        <div class="bill-to">
+          <h3>Rechnung an:</h3>
+          <address>
+            <strong>{{ invoice.user_customer_first_name }} {{ invoice.user_customer_last_name }}</strong><br />
+            {{ invoice.user_customer_street }} {{ invoice.user_customer_street_number }}<br />
+            {{ invoice.user_customer_postcode }} {{ invoice.user_customer_city }}
+          </address>
+        </div>
+
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Provison</th>
+              <th>Gebühr</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for service in invoice.services.all %}
+              <tr>
+                
+                {% if service.provision_fixed == null %}
+                <td>{{ service.service_name }}</td>
+                <td>{{ service.provision_percent }} %</td>
+                <td>{{ service.provision_amount }} €</td>
+
+                {% else %}
+                  <td>{{ service.service_name }}</td>
+                  <td></td>
+                  <td>{{ service.provision_fixed }} €</td>
+                {% endif %}
+
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <p>
+            <span>Investitions Betrag:</span> <span>{{ invoice.investitions_amount }} €</span>
+          </p>
+          <p>
+            <span>Provison:</span> <span>{{ invoice.provision }} €</span>
+          </p>
+          <p>
+            <span>MwSt. (19%):</span> <span>{{ invoice.value_tax }} €</span>
+          </p>
+          <h3><span>Total:</span> <span>{{ invoice.amount }} €</span></h3>
+        </div>
+
+        <footer>
+          <p class="footer-p">
+            Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen nach Erhalt dieser Rechnung. Zahlungen können per Banküberweisung oder in Kryptowährung erfolgen. 
+          </p>
+          <p class="footer-p">
+            Bei Fragen zu dieser Rechnung kontaktieren Sie uns bitte unter:
+            <span>
+              {{ invoice.company_email }}
+            </span>
+          </p>
+          <span>BLZ: {{ invoice.company_swift_code }}</span>
+          <span>Bankverbindung: {{ invoice.company_bank_account }}, USt-Idnr: {{ invoice.company_tax_number }}</span>
+        </footer>
+      </div>
+    </section>
+  </body>
+</html>

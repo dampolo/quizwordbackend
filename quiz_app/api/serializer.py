@@ -10,6 +10,7 @@ class GetQuizSerializer(serializers.ModelSerializer):
     quiz_id = serializers.IntegerField(source="id", read_only=True)
     concepts = serializers.SerializerMethodField()
     concepts_count = serializers.SerializerMethodField()
+    language_name = serializers.CharField(source="target_language.language_name", read_only=True)
 
     class Meta:
         model = Quiz
@@ -19,6 +20,7 @@ class GetQuizSerializer(serializers.ModelSerializer):
             "target_language",
             "concepts",
             "concepts_count",
+            "language_name",
             "created_at",
             "updated_at",
         )

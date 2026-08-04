@@ -32,7 +32,7 @@ class RegistrationView(APIView):
             saved_account = serializer.save()
             saved_account.is_active = False
             saved_account.save() 
-            # EmailService.confirm_your_email(saved_account, request)
+            EmailService.confirm_your_email(saved_account, request)
 
             data = {
                 'username': saved_account.username,
@@ -208,7 +208,7 @@ class EmailService():
         token = PasswordResetTokenGenerator().make_token(user)
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-        active_link = f"{settings.DEFAULT_API}kurse/verify-email/{uidb64}/{token}"
+        active_link = f"{settings.DEFAULT_API}verify-email/{uidb64}/{token}"
 
         html_content= render_to_string(
             'templates/confirm_your_email.html',
@@ -220,7 +220,7 @@ class EmailService():
         email_message = EmailMessage(
             subject='Bestätige deine E-Mail',
             body=html_content,
-            from_email=f"Start in Krypto <{settings.DEFAULT_FROM_EMAIL}>",
+            from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
             to=[user.email],
         )
 
