@@ -158,7 +158,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         user_languages = user.user_languages
         native_language = user_languages.native_language
-        category = validated_data.get["category"]
+        category = validated_data.get("category")
 
         native_item = next(
             (
@@ -216,9 +216,11 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                         f"'{existing_translation.word}'."
                     )
                 })
+            
+            current_category = category
 
-            if category is None:
-                category, _ = VocabularyCategory.objects.get_or_create(
+            if current_category is None:
+                current_category, _ = VocabularyCategory.objects.get_or_create(
                     user=user,
                     target_language=language,
                     category_name="STANDARD",
@@ -227,7 +229,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
             VocabularyWord.objects.create(
                 concept=concept,
                 language=language,
-                category=category,
+                category=current_category,
                 word=word,
                 tip=item.get("tip", ""),
                 sentence=item.get("sentence", ""),
