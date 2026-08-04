@@ -1,6 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets,filters
 from rest_framework.views import APIView, View
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
+from django_filters.rest_framework import DjangoFilterBackend
 from quiz_app.api.serializer import (
     QuizSerializer,
     QuizAttemptDetailSerializer,
@@ -17,6 +18,8 @@ from vocabulary_app.models import VocabularyWord, VocabularyConcept
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = {"target_language": ["exact"]}
 
     def get_queryset(self):
         return Quiz.objects.filter(user=self.request.user)
