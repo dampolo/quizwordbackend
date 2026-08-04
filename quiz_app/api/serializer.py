@@ -2,21 +2,23 @@ from rest_framework import serializers
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
 from vocabulary_app.api.serializer import VocabularyWordSerializer
-from vocabulary_app.models import VocabularyWord
+from vocabulary_app.models import VocabularyConcept, Language
 
 class QuizSerializer(serializers.ModelSerializer):
+    target_language = serializers.PrimaryKeyRelatedField(
+        queryset=Language.objects.all()
+    )
     quiz_id = serializers.IntegerField(source="id", read_only=True)
-    words = serializers.PrimaryKeyRelatedField(
-        queryset=VocabularyWord.objects.all(),
+    concepts = serializers.PrimaryKeyRelatedField(
+        queryset=VocabularyConcept.objects.all(),
         many=True,
-        write_only=True,
         required=False,
     )
 
-    words_count = serializers.SerializerMethodField()
+    concepts_count = serializers.SerializerMethodField()
 
     answers = VocabularyWordSerializer(
-        source="words",
+        source="concept",
         many=True,
         read_only=True
     )
@@ -26,25 +28,45 @@ class QuizSerializer(serializers.ModelSerializer):
         fields = [
             "quiz_id",
             "quiz_name",
-            "words",
-            "words_count",
+            "concepts",
+            "concepts_count",
+            "target_language",
             "answers",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
-    def get_words_count(self, obj):
-        return obj.words.count()
+    def get_concepts_count(self, obj):
+        return obj.concepts.count()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         request = self.context.get("request")
         if request:
-            self.fields["words"].queryset = VocabularyWord.objects.filter(
-                category__user=request.user
+            self.fields["concepts"].queryset = VocabularyConcept.objects.filter(
+                user=request.user
             )
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+
+        concepts = validated_data.pop("concepts")
+        target_language = validated_data.pop("target_language")
+
+        native_language = user.user_languages.native_language
+
+
+        quiz = Quiz.objects.create(
+            user=user,
+            native_language=native_language,
+            target_language=target_language,
+            **validated_data,
+        )
+
+        quiz.concepts.set(concepts)
+        return quiz
 
 
 class QuizAnswerSerializer(serializers.ModelSerializer):

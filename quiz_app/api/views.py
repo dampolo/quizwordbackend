@@ -21,7 +21,7 @@ class QuizViewSet(viewsets.ModelViewSet):
         return Quiz.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
 
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
