@@ -3,7 +3,6 @@ from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
 from vocabulary_app.api.serializer import VocabularyWordSerializer
 from vocabulary_app.models import VocabularyWord
-from quiz_app.models import Quiz, VocabularyWord
 
 class QuizSerializer(serializers.ModelSerializer):
     quiz_id = serializers.IntegerField(source="id", read_only=True)
