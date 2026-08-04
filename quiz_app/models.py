@@ -1,5 +1,5 @@
 from django.db import models
-from vocabulary_app.models import VocabularyWord
+from vocabulary_app.models import Language, VocabularyConcept
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
@@ -12,10 +12,23 @@ class Quiz(models.Model):
     )
     quiz_name = models.CharField(max_length=100)
 
-    words = models.ManyToManyField(
-        VocabularyWord,
+    native_language = models.ForeignKey(
+        Language,
+        on_delete=models.PROTECT,
+        related_name="native_quizzes"
+    )
+
+    target_language = models.ForeignKey(
+        Language,
+        on_delete=models.PROTECT,
+        related_name="target_quizzes"
+    )
+
+    concepts = models.ManyToManyField(
+        VocabularyConcept,
         related_name="quizzes"
     )
+
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -51,10 +64,11 @@ class QuizAnswer(models.Model):
         on_delete=models.CASCADE,
         related_name="answers"
     )
-    word = models.ForeignKey(
-        VocabularyWord,
-        on_delete=models.CASCADE
-    )
+
+    concept = models.ForeignKey(
+    VocabularyConcept,
+    on_delete=models.CASCADE
+)
 
     user_answer = models.CharField(max_length=255)
     correct_answer = models.CharField(max_length=255)
