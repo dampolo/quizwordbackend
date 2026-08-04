@@ -109,7 +109,7 @@ class QuizAnswerSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "attempt",
-            "word",
+            "concept",
             "soure_word",
             "user_answer",
             "correct_answer",
