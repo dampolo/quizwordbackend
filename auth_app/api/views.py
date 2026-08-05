@@ -171,7 +171,7 @@ class ForgotPasswordView(APIView):
         email_message = EmailMessage(
             subject='Passwort zurücksetzen',
             body=html_content,
-            from_email=f"Start in Krypto <{settings.DEFAULT_FROM_EMAIL}>",
+            from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
             to=[email],
         )
 
