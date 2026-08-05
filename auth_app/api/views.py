@@ -159,7 +159,7 @@ class ForgotPasswordView(APIView):
         token = PasswordResetTokenGenerator().make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-        reset_link = f"http://127.0.0.1:4200/reset-password/{uid}/{token}"
+        reset_link = f"{settings.DEFAULT_API}reset-password/{uid}/{token}"
 
         html_content = render_to_string(
             'templates/forgot_password.html',
