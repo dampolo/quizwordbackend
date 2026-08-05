@@ -20,10 +20,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
 from auth_app.user_language_status import UserLanguageStatus
+from django.db import transaction
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
 
