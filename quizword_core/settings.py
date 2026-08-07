@@ -211,13 +211,14 @@ STATICFILES_DIRS = [
 # This if for:
 # -forgot password
 # -reset password
+# Sendgrid
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_HOST_USER = "apikey"
+EMAIL_HOST_PASSWORD = env("SENDGRID_API_KEY")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env("EMAIL")
-EMAIL_HOST_PASSWORD = env("START_IN_KRYPTO")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 DEFAULT_API = env("MAIN_API")
 
 REST_FRAMEWORK = {
