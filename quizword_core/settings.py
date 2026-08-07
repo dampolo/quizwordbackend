@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-2--ir7&37dm!$((nisv7&%)m7utmhj%2@^20so@wh1b=u7of#4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0',
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'quiz-word.com'
                  '34.32.2.236']
 
 
@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -192,6 +193,12 @@ STATIC_URL = 'static/'
 
 # Where collectstatic will put files in production
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Additional dirs for development
 STATICFILES_DIRS = [
