@@ -23,12 +23,12 @@ services:
       - db
 
     ports:
-      - "8000:8000"
-    
+      - "8003:8000"
+
     volumes:
     - .:/app
 
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn --bind 0.0.0.0:8000 quizword_core.wsgi:application
 
 volumes:
   postgres_data:
