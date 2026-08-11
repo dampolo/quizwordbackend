@@ -79,10 +79,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError('Ungültige Email oder Passwort')
+            raise serializers.ValidationError({'detail': 'Ungültige Email oder Passwort.'})
 
         if not user.check_password(password):
-            raise serializers.ValidationError('Ungültige Email oder Passwort')
+            raise serializers.ValidationError({'detail': 'Ungültige Email oder Passwort.'})
 
         data = super().validate({
             'username': user.username,
