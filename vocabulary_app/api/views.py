@@ -183,3 +183,27 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
             return VocabularyConceptUpdateSerializer
 
         return VocabularyConceptSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+
+        if getattr(serializer, "requires_confirmation", False):
+            return Response(
+                {
+                    "requires_confirmation": True,
+                    "confirmation": serializer.confirmation_data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {
+                "data": serializer.data,
+                "info": getattr(serializer, "info_messages", []),
+                "requires_confirmation": False,
+            },
+            status=status.HTTP_201_CREATED,
+        )

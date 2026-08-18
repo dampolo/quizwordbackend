@@ -3,6 +3,7 @@ from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, 
 from django.db import transaction
 from auth_app.user_language_status import UserLanguageStatus
 
+
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
@@ -27,7 +28,6 @@ class UserLanguageSerializer(serializers.ModelSerializer):
     )
     languages_active = serializers.SerializerMethodField()
 
-
     class Meta:
         model = UserLanguages
         fields = ["id",
@@ -35,7 +35,7 @@ class UserLanguageSerializer(serializers.ModelSerializer):
                   "native_language_id",
                   "learning_languages",
                   "learning_languages_id",
-                    "languages_active"
+                  "languages_active"
                   ]
         read_only_fields = ["id"]
 
@@ -60,6 +60,8 @@ class UserLanguageSerializer(serializers.ModelSerializer):
         return instance
 
 # GET/PATCH/DELETE
+
+
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -130,11 +132,16 @@ class TranslationSerializer(serializers.Serializer):
 # POST
 class VocabularyEntryCreateSerializer(serializers.Serializer):
     category = serializers.PrimaryKeyRelatedField(
-    queryset=VocabularyCategory.objects.all(),
-    required=False,
-    allow_null=True,
-    write_only=True,
-)
+        queryset=VocabularyCategory.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
+    allow_new_meaning = serializers.BooleanField(
+        write_only=True,
+        required=False,
+        default=False,
+    )
     translations = TranslationSerializer(many=True)
 
     def validate(self, attrs):
@@ -154,12 +161,23 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         request = self.context["request"]
         user = request.user
+
         translations = validated_data["translations"]
+        category = validated_data.get("category")
+
+        allow_new_meaning = validated_data.pop(
+            "allow_new_meaning",
+            False,
+        )
 
         user_languages = user.user_languages
         native_language = user_languages.native_language
-        category = validated_data.get("category")
 
+        self.info_messages = []
+        self.requires_confirmation = False
+        self.confirmation_data = None
+
+        # Find native translation from payload
         native_item = next(
             (
                 item
@@ -178,8 +196,8 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         native_word = native_item["word"].strip()
 
-        # Search for "Hund" in the user's native language.
-        existing_native_translation = (
+        # Find concepts which already contain this native word
+        existing_native_translations = (
             VocabularyWord.objects
             .filter(
                 concept__user=user,
@@ -187,43 +205,119 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                 word__iexact=native_word,
             )
             .select_related("concept")
-            .first()
         )
 
-        if existing_native_translation:
-            concept = existing_native_translation.concept
-        else:
+        # -------------------------------------------------
+        # Native word doesn't exist -> completely new concept
+        # -------------------------------------------------
+
+        if not existing_native_translations.exists():
             concept = VocabularyConcept.objects.create(user=user)
+
+        else:
+            # For now take the existing concept.
+            existing_concepts = [translation.concept for translation in existing_native_translations]
+
+            # Find target translations from payload
+            other_items = [
+                item
+                for item in translations
+                if item["language"] != native_language
+            ]
+
+            exact_concept = None
+
+            for existing_concept in existing_concepts:
+                exact_match = True
+
+                for item in other_items:
+                    language = item["language"]
+                    word = item["word"].strip()
+
+                    existing_translation = (
+                        existing_concept.translations
+                        .filter(language=language)
+                        .first()
+                    )
+
+                    if (
+                        existing_translation is None
+                        or existing_translation.word.casefold()
+                        != word.casefold()
+                    ):
+                        exact_match = False
+                        break
+
+                if exact_match:
+                    exact_concept = existing_concept
+                    break
+            # ---------------------------------------------
+            # Exact translation already exists
+            # ---------------------------------------------
+
+            if exact_concept:
+                concept = existing_concept
+
+                self.info_messages.append(
+                    f"'{native_word}' with this translation "
+                    f"already exists."
+                )
+
+                return concept
+
+            # ---------------------------------------------
+            # Different meaning -> confirmation required
+            # ---------------------------------------------
+
+            if not allow_new_meaning:
+                self.requires_confirmation = True
+
+                existing_words = [
+                    {
+                        "language": translation.language.language_name,
+                        "word": translation.word,
+                    }
+                    for translation in existing_concept.translations.all()
+                    if translation.language != native_language
+                ]
+
+                self.confirmation_data = {
+                    "native_word": native_word,
+                    "existing_translations": existing_words,
+                    "new_translations": [
+                        {
+                            "language": item["language"].language_name,
+                            "word": item["word"].strip(),
+                        }
+                        for item in other_items
+                    ],
+                }
+
+                return existing_concept
+
+            # ---------------------------------------------
+            # User confirmed -> NEW concept
+            # ---------------------------------------------
+
+            concept = VocabularyConcept.objects.create(user=user)
+
+        # -------------------------------------------------
+        # Create translations
+        # -------------------------------------------------
 
         for item in translations:
             language = item["language"]
             word = item["word"].strip()
 
-            # Check whether this concept already has this language.
-            existing_translation = concept.translations.filter(
-                language=language
-            ).first()
-
-            if existing_translation:
-                # The same translation already exists.
-                if existing_translation.word.casefold() == word.casefold():
-                    continue
-
-                raise serializers.ValidationError({
-                    "translations": (
-                        f"This concept already has a translation "
-                        f"for {language.language_name}: "
-                        f"'{existing_translation.word}'."
-                    )
-                })
-            
             current_category = category
 
             if current_category is None:
-                current_category, _ = VocabularyCategory.objects.get_or_create(
-                    user=user,
-                    target_language=language,
-                    category_name="STANDARD",
+                current_category, _ = (
+                    VocabularyCategory.objects.get_or_create(
+                        user=user,
+                        target_language=language,
+                        category_name="STANDARD",
+                    )
                 )
 
             VocabularyWord.objects.create(
@@ -241,7 +335,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.PrimaryKeyRelatedField(
         source="target_language",
-         queryset=Language.objects.all(),
+        queryset=Language.objects.all(),
     )
 
     words_count = serializers.SerializerMethodField()
@@ -289,6 +383,8 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
         ]
 
 # GET
+
+
 class VocabularyConceptSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
