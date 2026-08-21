@@ -216,7 +216,8 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
         else:
             # For now take the existing concept.
-            existing_concepts = [translation.concept for translation in existing_native_translations]
+            existing_concepts = [
+                translation.concept for translation in existing_native_translations]
 
             # Find target translations from payload
             other_items = [
@@ -366,6 +367,22 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
             category=obj
         ).count()
 
+    def validate(self, attrs):
+        user = self.context["request"].user
+        language_id = attrs["target_language"] # Because of "source" it mus be target_language. 
+        category_name = attrs["category_name"]
+
+        exist = VocabularyCategory.objects.filter(
+            user=user, 
+            target_language=language_id, 
+            category_name__iexact=category_name
+            ).exists()
+        if exist:
+            raise serializers.ValidationError({
+                "detail": "Diese Kategorie existiert bereits."
+            })
+
+        return attrs
 
 class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
     language_name = serializers.CharField(
