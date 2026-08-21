@@ -1,4 +1,4 @@
-from rest_framework import viewsets,filters
+from rest_framework import viewsets, filters
 from rest_framework.views import APIView, View
 from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,6 +15,8 @@ from rest_framework.permissions import IsAuthenticated
 from vocabulary_app.models import VocabularyWord, VocabularyConcept
 
 # Use can see all his quizes
+
+
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -23,7 +25,7 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Quiz.objects.filter(user=self.request.user)
-    
+
     def perform_create(self, serializer):
         serializer.save()
 
@@ -33,24 +35,21 @@ class QuizViewSet(viewsets.ModelViewSet):
         return QuizSerializer
 
 
-
 class QuizAttemptViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = QuizAttempt.objects.filter(user=self.request.user)
-        
+
         quiz_id = self.request.query_params.get("quiz_id")
         if quiz_id:
             queryset = queryset.filter(quiz_id=quiz_id)
 
         return queryset
-    
+
     def get_serializer_class(self):
         if self.action == "list":
             return QuizAttemptListSerializer
 
         return QuizAttemptDetailSerializer
-
-
 
 
 class QuizSubmitAPIView(APIView):
@@ -62,7 +61,7 @@ class QuizSubmitAPIView(APIView):
             user=request.user
         )
 
-        direction=request.data.get("direction")
+        direction = request.data.get("direction")
 
         target_language = quiz.target_language
         native_language = quiz.native_language
@@ -110,7 +109,7 @@ class QuizSubmitAPIView(APIView):
                 is_correct=is_correct
             )
 
-            UpdateRank.update_rank(rank_word, is_correct, direction);
+            UpdateRank.update_rank(rank_word, is_correct, direction)
 
             results.append({
                 "word_id": concept.id,
@@ -130,7 +129,7 @@ class QuizSubmitAPIView(APIView):
             "score": attempt.score,
             "results": results
         })
-    
+
 
 class UpdateRank:
     @staticmethod
@@ -147,3 +146,22 @@ class UpdateRank:
             else:
                 word.source_rank -= 1
             word.save(update_fields=["rank"])
+
+
+class LastQuizView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        last_quiz = QuizAttempt.objects.filter(
+            user=user).order_by("-started_at").first()
+
+        if last_quiz is None:
+            return Response(
+                {'detail': 'Du hast bis jetzt keine Quize erstellt'})
+        return Response(
+            {
+                'quiz_id': last_quiz.quiz_id
+            }
+        )
