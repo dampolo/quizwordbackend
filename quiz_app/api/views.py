@@ -9,8 +9,10 @@ from quiz_app.api.serializer import (
     GetQuizSerializer
 )
 
+
 from django.utils import timezone
 from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from vocabulary_app.models import VocabularyWord, VocabularyConcept
 
@@ -159,9 +161,14 @@ class LastQuizView(APIView):
 
         if last_quiz is None:
             return Response(
-                {'detail': 'Du hast bis jetzt keine Quize erstellt'})
-        return Response(
-            {
-                'quiz_id': last_quiz.quiz_id
-            }
+                {'detail': 'Du hast bis jetzt keine Quize erstellt'},
+                status=status.HTTP_404_NOT_FOUND
+                )
+
+        quiz = last_quiz.quiz
+
+        serializer = GetQuizSerializer(
+            quiz,
+            context={'request': request}
         )
+        return Response(serializer.data)
