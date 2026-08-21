@@ -75,9 +75,10 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     filterset_fields = {"target_language": ["exact"]}
 
     def get_queryset(self):
+        native_language = self.request.user.user_languages.native_language
+
         return VocabularyCategory.objects.filter(
-            user=self.request.user
-        )
+            user=self.request.user).exclude(target_language=native_language)
 
     def perform_create(self, serializer):
         if not UserLanguageStatus.languages_active(self.request.user):
