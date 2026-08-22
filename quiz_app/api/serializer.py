@@ -5,7 +5,7 @@ from vocabulary_app.api.serializer import VocabularyConceptSerializer
 from vocabulary_app.models import VocabularyConcept, Language
 
 
-# GET for quiz retrieve:
+# User can see all his quizzes:
 class GetQuizSerializer(serializers.ModelSerializer):
     quiz_id = serializers.IntegerField(source="id", read_only=True)
     concepts = serializers.SerializerMethodField()
@@ -39,7 +39,7 @@ class GetQuizSerializer(serializers.ModelSerializer):
     def get_concepts_count(self, obj):
         return obj.concepts.count()
 
-# GET for quiz retrieve:
+# POST for create quiz:
 class QuizSerializer(serializers.ModelSerializer):
     target_language = serializers.PrimaryKeyRelatedField(
         queryset=Language.objects.all()
@@ -102,6 +102,11 @@ class QuizSerializer(serializers.ModelSerializer):
 
         quiz.concepts.set(concepts)
         return quiz
+
+class UpdateQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model: Quiz
+        fields = ["quiz_name"]
 
 
 class QuizAnswerSerializer(serializers.ModelSerializer):

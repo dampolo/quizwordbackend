@@ -6,7 +6,8 @@ from quiz_app.api.serializer import (
     QuizSerializer,
     QuizAttemptDetailSerializer,
     QuizAttemptListSerializer,
-    GetQuizSerializer
+    GetQuizSerializer,
+    UpdateQuizSerializer
 )
 
 
@@ -17,8 +18,6 @@ from rest_framework.permissions import IsAuthenticated
 from vocabulary_app.models import VocabularyWord, VocabularyConcept
 
 # Use can see all his quizes
-
-
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -34,6 +33,10 @@ class QuizViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return GetQuizSerializer
+
+        if self.action in ["update", "partial_update"]:
+            return UpdateQuizSerializer
+        
         return QuizSerializer
 
 
