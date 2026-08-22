@@ -84,6 +84,24 @@ class QuizSerializer(serializers.ModelSerializer):
                 user=request.user
             )
 
+    def validate(self, attrs):
+        user = self.context["request"].user
+        target_language = attrs["target_language"]
+        quiz_name = attrs["quiz_name"]
+
+        exist = Quiz.objects.filter(
+            user=user,
+            target_language=target_language,
+            quiz_name__iexact=quiz_name,
+            ).exists()
+
+        if exist:
+            raise serializers.ValidationError({
+                "detail": "Das Quiz existiert bereits."
+            })
+
+        return attrs
+
     def create(self, validated_data):
         user = self.context["request"].user
 
@@ -91,7 +109,6 @@ class QuizSerializer(serializers.ModelSerializer):
         target_language = validated_data.pop("target_language")
 
         native_language = user.user_languages.native_language
-
 
         quiz = Quiz.objects.create(
             user=user,
@@ -105,7 +122,7 @@ class QuizSerializer(serializers.ModelSerializer):
 
 class UpdateQuizSerializer(serializers.ModelSerializer):
     class Meta:
-        model: Quiz
+        model = Quiz
         fields = ["quiz_name"]
 
 
