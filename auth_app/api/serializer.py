@@ -91,3 +91,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return data
 
+class ChangeEmailSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    new_email = serializers.EmailField()
+
+    def validate_password(self, password):
+        user = self.context["request"].user
+
+        if not user.check_password(password):
+            raise serializers.ValidationError("Passwort ist falsch.")
+
+        return password
+
+    def validate_new_email(self, email):
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                "Diese E-Mail-Adresse wird bereits verwendet."
+            )
+
+        return email

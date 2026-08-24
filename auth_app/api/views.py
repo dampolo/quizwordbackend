@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.views import APIView, View
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializer import RegistrationSerializer, CustomTokenObtainPairSerializer
+from .serializer import RegistrationSerializer, CustomTokenObtainPairSerializer, ChangeEmailSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from auth_app.models import User
@@ -262,5 +262,25 @@ class VerifyEmailView(APIView):
 
         return Response(
             {"message": "Email successfully verified"},
+            status=status.HTTP_200_OK
+        )
+
+class ChangeEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangeEmailSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.email = serializer.validated_data["new_email"]
+        user.save(update_fields=["email"])
+
+        return Response(
+            {"detail": "E-Mail-Adresse wurde erfolgreich geändert."},
             status=status.HTTP_200_OK
         )
