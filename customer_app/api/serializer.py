@@ -25,9 +25,11 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-        read_only_fields = ['id','created_at', 'updated_at', 'customer_number']
-    
+        read_only_fields = ['id', 'customer_number',
+                            'email', 'has_subscription', 'is_active', 'created_at', 'updated_at']
+
     def validate_postcode(self, value):
         if not value.isdigit():
-            raise serializers.ValidationError("Post code must contain numbers only.")
+            raise serializers.ValidationError(
+                "Post code must contain numbers only.")
         return value
