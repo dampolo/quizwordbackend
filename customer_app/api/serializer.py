@@ -29,7 +29,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
                             'email', 'has_subscription', 'is_active', 'created_at', 'updated_at']
 
     def validate_postcode(self, value):
-        if not value.isdigit():
+        if value and not value.isdigit():
             raise serializers.ValidationError(
                 "Post code must contain numbers only.")
         return value
