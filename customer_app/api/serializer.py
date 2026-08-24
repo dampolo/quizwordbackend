@@ -11,6 +11,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'image',
             'title',
             'username',
+            'password',
             'first_name',
             'last_name',
             'street',
@@ -25,7 +26,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-        read_only_fields = ['id', 'customer_number',
+        read_only_fields = ['id', 'customer_number', 'password',
                             'email', 'has_subscription', 'is_active', 'created_at', 'updated_at']
 
     def validate_postcode(self, value):

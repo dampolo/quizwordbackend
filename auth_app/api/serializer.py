@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
+
 class RegistrationSerializer(serializers.ModelSerializer):
     repeated_password = serializers.CharField(write_only=True)
 
@@ -16,7 +17,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             'password': {
                 'write_only': True
             },
-             'role': {
+            'role': {
                 'required': False
             },
             'email': {
@@ -24,17 +25,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
             }
         }
 
-    
     def get_help_text(self, obj):
         return CustomPasswordValidator().get_help_text()
 
     def validate_password(self, value):
-        repeated_pw = self.initial_data.get("repeated_password")        
+        repeated_pw = self.initial_data.get("repeated_password")
         try:
             CustomPasswordValidator().validate(value)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages)
-        
+
         if repeated_pw and value != repeated_pw:
             raise serializers.ValidationError("Passwords don't match.")
         return value
@@ -62,7 +62,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         if 'username' in self.fields:
             self.fields.pop('username')
-    
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -79,10 +79,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError({'detail': 'Ungültige Email oder Passwort.'})
+            raise serializers.ValidationError(
+                {'detail': 'Ungültige Email oder Passwort.'})
 
         if not user.check_password(password):
-            raise serializers.ValidationError({'detail': 'Ungültige Email oder Passwort.'})
+            raise serializers.ValidationError(
+                {'detail': 'Ungültige Email oder Passwort.'})
 
         data = super().validate({
             'username': user.username,
@@ -90,6 +92,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         })
 
         return data
+
 
 class ChangeEmailSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
@@ -110,3 +113,24 @@ class ChangeEmailSerializer(serializers.Serializer):
             )
 
         return email
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+    repeated_password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        try:
+            CustomPasswordValidator().validate(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages)
+
+        return value
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["repeated_password"]:
+            raise serializers.ValidationError({
+                "repeated_password": "Passwörter stimmen nicht überein."
+            })
+
+        return attrs
