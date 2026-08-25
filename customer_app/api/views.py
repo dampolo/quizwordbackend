@@ -1,9 +1,10 @@
+from rest_framework import status
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializer import ChangeUsernameSerializer, CustomerProfileSerializer
+from .serializer import ChangeUsernameSerializer, CustomerProfileSerializer, DeleteAccountSerializer
 
 
 # This method show the whole profile from Customer
@@ -31,3 +32,21 @@ class ChangeUsernameView(APIView):
         return Response({
             "detail": "Benutzername wurde erfolgreich geändert."
         })
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        serializer = DeleteAccountSerializer(
+            data= request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.delete()
+
+        return Response(
+            {'detail': 'Dein Konto wurde gelöscht.'},
+            status=status.HTTP_204_OK
+        )
