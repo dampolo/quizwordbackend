@@ -34,3 +34,19 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Post code must contain numbers only.")
         return value
+
+
+class ChangeUsernameSerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+    def validate_username(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Dieser Benutzername wird bereits verwendet."
+            )
+        if len(value) < 4 or len(value) > 10:
+            raise serializers.ValidationError(
+                "Mindestens 4, maximal 10 Zeichen und keine Leerzeichen."
+            )
+
+        return value
