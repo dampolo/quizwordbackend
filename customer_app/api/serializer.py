@@ -66,7 +66,7 @@ class DeleteAccountSerializer(serializers.Serializer):
 
         if not user.check_password(attrs['password']):
             raise serializers.ValidationError(
-                {"password": "Passwort ist falsch."}
+                {"password": "Dein Passwort ist nicht korrekt."}
             )
 
         return attrs
