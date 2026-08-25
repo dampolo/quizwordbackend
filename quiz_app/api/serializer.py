@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
 
+from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
 from vocabulary_app.api.serializer import VocabularyConceptSerializer
-from vocabulary_app.models import VocabularyConcept, Language
+from vocabulary_app.models import Language, VocabularyConcept
 
 
 # User can see all his quizzes:

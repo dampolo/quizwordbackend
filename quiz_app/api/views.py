@@ -1,21 +1,17 @@
-from rest_framework import viewsets, filters
-from rest_framework.views import APIView, View
-from quiz_app.models import Quiz, QuizAttempt, QuizAnswer
-from django_filters.rest_framework import DjangoFilterBackend
-from quiz_app.api.serializer import (
-    QuizSerializer,
-    QuizAttemptDetailSerializer,
-    QuizAttemptListSerializer,
-    GetQuizSerializer,
-    UpdateQuizSerializer
-)
-
-
 from django.utils import timezone
-from rest_framework.response import Response
-from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.permissions import IsAuthenticated
-from vocabulary_app.models import VocabularyWord, VocabularyConcept
+from rest_framework.response import Response
+from rest_framework.views import APIView, View
+
+from quiz_app.api.serializer import (GetQuizSerializer,
+                                     QuizAttemptDetailSerializer,
+                                     QuizAttemptListSerializer, QuizSerializer,
+                                     UpdateQuizSerializer)
+from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
+from vocabulary_app.models import VocabularyConcept, VocabularyWord
+
 
 # Use can see all his quizes
 class QuizViewSet(viewsets.ModelViewSet):

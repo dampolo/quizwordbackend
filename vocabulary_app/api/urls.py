@@ -1,15 +1,10 @@
-from . import views
-
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (
-    VocabularyCategoryViewSet,
-    VocabularyWordViewSet,
-    LanguageViewSet,
-    UserLanguageViewSet,
-    VocabularyConceptViewSet
-)
+from . import views
+from .views import (LanguageViewSet, UserLanguageViewSet,
+                    VocabularyCategoryViewSet, VocabularyConceptViewSet,
+                    VocabularyWordViewSet)
 
 router = DefaultRouter()
 router.register(

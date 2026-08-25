@@ -1,8 +1,10 @@
 from rest_framework import generics
-from .serializer import CustomerProfileSerializer, ChangeUsernameSerializer
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .serializer import ChangeUsernameSerializer, CustomerProfileSerializer
+
 
 # This method show the whole profile from Customer
 class CustomerProfileView(generics.RetrieveUpdateAPIView):

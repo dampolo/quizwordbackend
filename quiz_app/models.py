@@ -1,7 +1,9 @@
-from django.db import models
-from vocabulary_app.models import Language, VocabularyConcept
 from django.conf import settings
+from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from vocabulary_app.models import Language, VocabularyConcept
+
 
 # Create your models here.
 class Quiz(models.Model):

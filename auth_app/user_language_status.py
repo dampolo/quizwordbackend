@@ -1,5 +1,6 @@
 from vocabulary_app.models import UserLanguages
 
+
 class UserLanguageStatus:
     @staticmethod
     def languages_active(user):

@@ -1,7 +1,9 @@
-from rest_framework import serializers
-from vocabulary_app.models import VocabularyCategory, VocabularyWord, Language, UserLanguages, VocabularyConcept
 from django.db import transaction
+from rest_framework import serializers
+
 from auth_app.user_language_status import UserLanguageStatus
+from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
+                                   VocabularyConcept, VocabularyWord)
 
 
 class LanguageSerializer(serializers.ModelSerializer):

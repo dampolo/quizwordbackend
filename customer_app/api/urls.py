@@ -1,7 +1,7 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from . import views
 
+from . import views
 
 urlpatterns = [
     path('profile-customer/', views.CustomerProfileView.as_view()),

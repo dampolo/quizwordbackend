@@ -1,6 +1,8 @@
-from django.test import TestCase
-from auth_app.api.serializer import RegistrationSerializer
 from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from auth_app.api.serializer import RegistrationSerializer
+
 User = get_user_model()
 
 

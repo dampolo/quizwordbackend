@@ -1,26 +1,31 @@
+from django.conf import settings
+from django.contrib.auth import logout
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.mail import EmailMessage
+from django.db import transaction
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from rest_framework.views import APIView, View
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializer import RegistrationSerializer, CustomTokenObtainPairSerializer, ChangeEmailSerializer, ChangePasswordSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.views import APIView, View
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from auth_app.models import User
-from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.core.mail import EmailMessage
-from django.utils.encoding import force_bytes, force_str
-from django.conf import settings
-from django.template.loader import render_to_string
-from django.shortcuts import render
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.shortcuts import redirect
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.contrib.auth import logout
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
+
+from auth_app.models import User
 from auth_app.user_language_status import UserLanguageStatus
-from django.db import transaction
+
+from .serializer import (ChangeEmailSerializer, ChangePasswordSerializer,
+                         CustomTokenObtainPairSerializer,
+                         RegistrationSerializer)
+
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
