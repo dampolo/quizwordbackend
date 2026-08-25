@@ -1,6 +1,4 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
-
 from . import views
 
 urlpatterns = [
@@ -9,5 +7,10 @@ urlpatterns = [
         "change-username/",
         views.ChangeUsernameView.as_view(),
         name="change-username",
+    ),
+    path(
+        "delete-account/",
+        views.DeleteAccountView.as_view(),
+        name="delete-account",
     )
 ]

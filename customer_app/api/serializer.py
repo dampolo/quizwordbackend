@@ -52,13 +52,21 @@ class ChangeUsernameSerializer(serializers.Serializer):
 
         return value
 
+
 class DeleteAccountSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
-    def validate_password(self, value):
+    def validate(self, attrs):
         user = self.context['request'].user
 
-        if not user.check_password(value):
-            raise serializers.ValidationError("Passwort ist falsch.")
+        if user.is_superuser:
+            raise serializers.ValidationError(
+                {"detail": "Ein Superuser-Konto kann nicht gelöscht werden."}
+            )
 
-        return value
+        if not user.check_password(attrs['password']):
+            raise serializers.ValidationError(
+                {"password": "Passwort ist falsch."}
+            )
+
+        return attrs

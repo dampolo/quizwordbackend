@@ -48,5 +48,5 @@ class DeleteAccountView(APIView):
 
         return Response(
             {'detail': 'Dein Konto wurde gelöscht.'},
-            status=status.HTTP_204_OK
+            status=status.HTTP_200_OK
         )
