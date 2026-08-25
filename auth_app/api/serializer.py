@@ -87,6 +87,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError(
                 {'detail': 'Ungültige Email oder Passwort.'})
 
+        if not user.is_active:
+            raise serializers.ValidationError(
+                {'detail': 'Du hast dein E-Mail nicht aktivert.'})
+
         data = super().validate({
             'username': user.username,
             'password': password
