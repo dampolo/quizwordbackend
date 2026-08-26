@@ -36,6 +36,22 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
                 "Post code must contain numbers only.")
         return value
 
+    def validate_image(self, value):
+        max_size = 2 * 1024 * 1024
+
+        if value and value.size > max_size:
+            raise serializers.ValidationError(
+                "Das Bild darf maximal 2 MB groß sein."
+            )
+
+        return value
+
+    def update(self, instance, validated_data):
+        if validated_data.get("image", "not-provided") is None:
+            if instance.image:
+                instance.image.delete(save=False)
+
+        return super().update(instance, validated_data)
 
 class ChangeUsernameSerializer(serializers.Serializer):
     username = serializers.CharField()
