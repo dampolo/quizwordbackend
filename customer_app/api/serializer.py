@@ -47,12 +47,16 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        if validated_data.get("image", "not-provided") is None:
-            if instance.image:
-                instance.image.delete(save=False)
+        image_was_provided = "image" in validated_data
+        old_image = instance.image
 
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
 
+        if( image_was_provided and old_image and old_image.name != instance.image.name):
+            old_image.delete(save=False)
+
+        return instance
+    
 class ChangeUsernameSerializer(serializers.Serializer):
     username = serializers.CharField()
 
