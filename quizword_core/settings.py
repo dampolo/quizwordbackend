@@ -37,6 +37,8 @@ SECRET_KEY = env("DJANGO_SECRET_KEY"),
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") 
+
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'quiz-word.com',
                  '34.32.2.236']
 
@@ -208,6 +210,8 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") 
 
 # Additional dirs for development
 STATICFILES_DIRS = [
