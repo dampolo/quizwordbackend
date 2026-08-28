@@ -25,7 +25,7 @@ class SupportView(APIView):
             "message": message,
         }
 
-        html_to_me = render_to_string("templates/email_to_me.html", context)
+        html_to_me = render_to_string("templates/email_to_support.html", context)
         email_to_support = EmailMessage(
             subject=f"Nachricht von {name}",
             body=html_to_me,
@@ -39,7 +39,7 @@ class SupportView(APIView):
         email_to_support.send()
 
         # Confirmation email to USER
-        html_answer = render_to_string("templates/email_answer.html", context)
+        html_answer = render_to_string("templates/email_to_user.html", context)
         confirmation_email = EmailMessage(
             subject="Bestätigung von Quiz Word",
             body=html_answer,
