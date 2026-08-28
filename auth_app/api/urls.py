@@ -13,5 +13,6 @@ urlpatterns = [
     path('verify-email/<uidb64>/<token>/', views.VerifyEmailView.as_view(), name='verify-email'),
     path("change-email/", views.ChangeEmailView.as_view(), name="change-email"),
     path("change-password/", views.ChangePasswordView.as_view(), name="change-password"),
+    
     # path("profile/check/", views.ProfileCompleteView.as_view(),name="profile-check",),
 ]
