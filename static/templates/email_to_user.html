@@ -1,13 +1,50 @@
-<p>Hallo {{ name }},</p>
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bestätigung von Quiz Word</title>
+  </head>
 
-<p>
-  vielen Dank für deine Nachricht bei <b>Quiz Word</b>!
-</p>
-<p>Wir haben deine Unterlagen erhalten und melden uns in Kürze.</p>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td align="center">
+          <table width="600" cellpadding="20" cellspacing="0" border="0" style="background-color:#ffffff;">
+            <!-- Header -->
+            <tr>
+              <td align="center">
+                <img src="https://quiz-word.com/assets/logo-for-email.png" alt="Logo Quiz Word" width="180" style="display:block;" />
+              </td>
+            </tr>
 
-<p>
-  Mit freundlichen Grüßen<br />
-  Elisabeth
-</p>
+            <!-- Content -->
+            <tr>
+              <td>
+                <h1 style="font-size:24px; margin-bottom:20px;">Bestätige deine E-Mail</h1>
 
-<img width="180px" height="auto" src="https://quiz-word.com/assets/logo-for-email.png" alt="Logo Quiz Word" />
+                <p>Hallo {{ name }},</p>
+
+                <p>
+                  vielen Dank für deine Nachricht bei <b>Quiz Word</b>!
+                </p>
+                <p>Wir haben deine Nachricht erhalten und melden uns in Kürze.</p>
+
+                <p>Deine Nachricht: </p>
+                <p style="font-style: italic;">
+                  {{ message }}
+                </p>
+
+                <p>
+                  Mit freundlichen Grüßen<br />
+                  Elisabeth | Quiz Word Team
+                </p>
+
+                <p style="font-size:12px; color:#888;">Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

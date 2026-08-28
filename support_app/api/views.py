@@ -25,10 +25,10 @@ class SupportView(APIView):
             "message": message,
         }
 
-        html_to_me = render_to_string("templates/email_to_support.html", context)
+        html_to_support = render_to_string("templates/email_to_support.html", context)
         email_to_support = EmailMessage(
             subject=f"Nachricht von {name}",
-            body=html_to_me,
+            body=html_to_support,
             # always your verified sender
             from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
             to=[settings.DEFAULT_FROM_EMAIL],
@@ -45,6 +45,7 @@ class SupportView(APIView):
             body=html_answer,
             from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
             to=[email],
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
         )
         confirmation_email.content_subtype = "html"
         confirmation_email.send()
