@@ -15,9 +15,9 @@ class SupportView(APIView):
         serializer = SupportSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        name = request.get("name")
-        email = request.get("email")
-        message = request.get("message")
+        name = serializer.validated_data["name"]
+        email = serializer.validated_data["email"]
+        message = serializer.validated_data["message"]
 
         context = {
             "name": name,
