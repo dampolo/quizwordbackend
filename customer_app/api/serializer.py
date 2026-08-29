@@ -37,11 +37,11 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         return value
 
     def validate_image(self, value):
-        max_size = 2 * 1024 * 1024
+        max_size = 3 * 1024 * 1024
 
         if value and value.size > max_size:
             raise serializers.ValidationError(
-                "Das Bild darf maximal 2 MB groß sein."
+                "Das Bild darf maximal 3 MB groß sein."
             )
 
         return value
