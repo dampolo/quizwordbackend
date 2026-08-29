@@ -237,6 +237,10 @@ REST_FRAMEWORK = {
         "auth_app.authentication.CookieJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
+    # In prduction you will see only JSON instead of Browsable API from Django REST Framework
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
 }
 
 AUTH_USER_MODEL = 'auth_app.User'
