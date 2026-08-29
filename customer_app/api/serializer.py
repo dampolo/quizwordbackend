@@ -12,7 +12,6 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'image',
             'title',
             'username',
-            'password',
             'first_name',
             'last_name',
             'street',
@@ -23,12 +22,11 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'phone',
             'has_subscription',
             'is_active',
-            'created_at',
-            'updated_at',
+            'created_at'
         ]
 
-        read_only_fields = ['id', 'customer_number', 'password',
-                            'email', 'has_subscription', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'customer_number',
+                            'email', 'has_subscription', 'is_active', 'created_at']
 
     def validate_postcode(self, value):
         if value and not value.isdigit():
