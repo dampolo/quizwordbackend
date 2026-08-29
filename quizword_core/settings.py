@@ -32,10 +32,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("DJANGO_SECRET_KEY"),
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env.bool("DEBUG", default=False)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") 
 
@@ -145,8 +145,6 @@ WSGI_APPLICATION = 'quizword_core.wsgi.application'
 #     }
 # }
 
-SECRET_KEY = env("SECRET_KEY", default="unsafe-default")
-DEBUG = env.bool("DEBUG", default=False)
 
 DATABASES = {
     'default': {
