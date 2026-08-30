@@ -63,7 +63,7 @@ class ChangeUsernameSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "Dieser Benutzername wird bereits verwendet."
             )
-        if len(value) < 4 or len(value) > 10:
+        if len(value) < 4 or len(value) > 10 or any(character.isspace() for character in value):
             raise serializers.ValidationError(
                 "Mindestens 4, maximal 10 Zeichen und keine Leerzeichen."
             )
