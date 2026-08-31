@@ -90,38 +90,58 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
 
 class CookieTokenRefreshView(TokenRefreshView):
-
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh_token")
 
-        if refresh_token is None:
+        if not refresh_token:
             return Response(
-                {'message': 'Refresh token not found'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        serializer = self.get_serializer(data={'refresh': refresh_token})
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except:
-            return Response(
-                {'message': 'Refresh token invalid'},
+                {"message": "Refresh token not found"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        access_token = serializer.validated_data.get("access")
+        serializer = self.get_serializer(
+            data={"refresh": refresh_token}
+        )
 
-        response = Response({'message': 'Access Token refreshed'})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except (InvalidToken, TokenError):
+            response = Response(
+                {"message": "Refresh token invalid or expired"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+            response.delete_cookie("access_token")
+            response.delete_cookie("refresh_token")
+
+            return response
+
+        access_token = serializer.validated_data["access"]
+        new_refresh_token = serializer.validated_data.get("refresh")
+
+        response = Response(
+            {"message": "Access token refreshed"},
+            status=status.HTTP_200_OK,
+        )
 
         response.set_cookie(
-            key='access_token',
-            value=access_token,
+            key="access_token",
+            value=str(access_token),
             httponly=True,
             secure=True,
-            samesite='Lax',
-            max_age=15 * 60
+            samesite="Lax",
+            max_age=15 * 60,
         )
+
+        if new_refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=str(new_refresh_token),
+                httponly=True,
+                secure=True,
+                samesite="Lax",
+                max_age=15 * 24 * 60 * 60,
+            )
 
         return response
 
