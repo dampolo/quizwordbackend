@@ -75,9 +75,10 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         native_language = self.request.user.user_languages.native_language
+        learning_languages = self.request.user.user_languages.learning_languages.all()
 
         return VocabularyCategory.objects.filter(
-            user=self.request.user).exclude(target_language=native_language)
+            user=self.request.user, target_language__in=learning_languages).exclude(target_language=native_language)
 
     def perform_create(self, serializer):
         if not UserLanguageStatus.languages_active(self.request.user):
