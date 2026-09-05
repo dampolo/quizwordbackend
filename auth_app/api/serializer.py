@@ -9,15 +9,13 @@ User = get_user_model()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
     repeated_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ['email', 'password', 'repeated_password', 'role']
         extra_kwargs = {
-            'password': {
-                'write_only': True
-            },
             'role': {
                 'required': False
             },
@@ -30,15 +28,19 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return CustomPasswordValidator().get_help_text()
 
     def validate_password(self, value):
-        repeated_pw = self.initial_data.get("repeated_password")
         try:
             CustomPasswordValidator().validate(value)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages)
-
-        if repeated_pw and value != repeated_pw:
-            raise serializers.ValidationError("Passwords don't match.")
         return value
+    
+    def validate(self, attrs):
+        if attrs["password"] != attrs["repeated_password"]:
+            raise serializers.ValidationError({
+                "repeated_password": "Passwörter stimmen nicht überein."
+            })
+
+        return attrs
 
     def create(self, validated_data):
         password = validated_data['password']
@@ -121,10 +123,20 @@ class ChangeEmailSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
-    repeated_password = serializers.CharField(write_only=True)
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    repeated_new_password = serializers.CharField(write_only=True)
 
-    def validate_password(self, value):
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                "Das aktuelle Passwort ist ungültig."
+            )
+
+        return value
+
+    def validate_new_password(self, value):
         try:
             CustomPasswordValidator().validate(value)
         except DjangoValidationError as error:
@@ -133,9 +145,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        if attrs["password"] != attrs["repeated_password"]:
+        if attrs["new_password"] != attrs["repeated_new_password"]:
             raise serializers.ValidationError({
-                "repeated_password": "Passwörter stimmen nicht überein."
+                "repeated_new_password": "Passwörter stimmen nicht überein."
             })
 
         return attrs

@@ -316,14 +316,15 @@ class ChangePasswordView(APIView):
 
     def post(self, request):
         serializer = ChangePasswordSerializer(
-            data=request.data
+            data=request.data,
+            context={"request": request},
         )
 
         serializer.is_valid(raise_exception=True)
 
         user= request.user
         user.set_password(
-            serializer.validated_data['password']
+            serializer.validated_data['new_password']
         )
 
         user.save()
