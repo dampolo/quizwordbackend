@@ -451,13 +451,13 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
                     "category_id": "This category does not belong to you."
                 })
 
-            # if category and category.target_language != language:
-            #     raise serializers.ValidationError({
-            #         "category_id": (
-            #             "The category language must match "
-            #             "the translation language."
-            #         )
-            #     })
+            if category and category.target_language != language:
+                raise serializers.ValidationError({
+                    "category_id": (
+                        "The category language must match "
+                        "the translation language."
+                    )
+                })
 
             # The concept cannot contain the same language twice.
             if (
