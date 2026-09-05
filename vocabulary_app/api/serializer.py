@@ -312,21 +312,9 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
             language = item["language"]
             word = item["word"].strip()
 
-            current_category = category
-
-            if current_category is None:
-                current_category, _ = (
-                    VocabularyCategory.objects.get_or_create(
-                        user=user,
-                        target_language=language,
-                        category_name="STANDARD",
-                    )
-                )
-
             VocabularyWord.objects.create(
                 concept=concept,
                 language=language,
-                category=current_category,
                 word=word,
                 tip=item.get("tip", ""),
                 sentence=item.get("sentence", ""),
@@ -464,12 +452,13 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
 
             category = data.get("category")
 
-            if category is None:
-                category, _ = VocabularyCategory.objects.get_or_create(
-                    user=request.user,
-                    target_language=language,
-                    category_name="STANDARD",
-                )
+            # if category is None:
+            #     category, _ = VocabularyCategory.objects.get_or_create(
+            #         user=request.user,
+            #         target_language=language,
+            #         category_name="STANDARD",
+            #     )
+
             if category and category.user != request.user:
                 raise serializers.ValidationError({
                     "category_id": "This category does not belong to you."
