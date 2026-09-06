@@ -25,9 +25,19 @@ class GetQuizSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    # This method filter Quiz and show native language and target language
+    # Otherwise if you cancel the word(target language)you will get error.
+    def get_valid_concepts(self, obj):
+        return obj.concepts.filter(
+            translations__language=obj.native_language
+        ).filter(
+            translations__language=obj.target_language
+        )
+
     def get_concepts(self, obj):
+        concepts = self.get_valid_concepts(obj)
         serializer = VocabularyConceptSerializer(
-            obj.concepts.all(),
+            concepts,
             many=True,
             context={
                 "request": self.context["request"],
@@ -37,7 +47,7 @@ class GetQuizSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def get_concepts_count(self, obj):
-        return obj.concepts.count()
+        return self.get_valid_concepts(obj).count()
 
 # POST for create quiz:
 class QuizSerializer(serializers.ModelSerializer):
