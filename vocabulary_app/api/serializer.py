@@ -61,9 +61,6 @@ class UserLanguageSerializer(serializers.ModelSerializer):
 
         return instance
 
-# GET/PATCH/DELETE
-
-
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -161,8 +158,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        request = self.context["request"]
-        user = request.user
+        user = self.context["request"].user
 
         translations = validated_data["translations"]
 
@@ -229,9 +225,11 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
 
             exact_concept = None
 
+            # Check every existing concept containing the native word
             for existing_concept in existing_concepts:
                 exact_match = True
 
+                 # Check all submitted target-language translations
                 for item in other_items:
                     language = item["language"]
                     word = item["word"].strip()
@@ -253,24 +251,21 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                 if exact_match:
                     exact_concept = existing_concept
                     break
+
             # ---------------------------------------------
             # Exact translation already exists
             # ---------------------------------------------
-
-            if exact_concept:
-                concept = existing_concept
-
+            if exact_concept is not None:
                 self.info_messages.append(
-                    f"'{native_word}' with this translation "
-                    f"already exists."
+                    f"'{native_word}' mit dieser Übersetzung "
+                    f"existiert bereits."
                 )
 
-                return concept
+                return exact_concept
 
             # ---------------------------------------------
             # Different meaning -> confirmation required
             # ---------------------------------------------
-
             if not allow_new_meaning:
                 self.requires_confirmation = True
 
@@ -308,10 +303,12 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
         for item in translations:
             language = item["language"]
             word = item["word"].strip()
+            category = validated_data["category"]
 
             VocabularyWord.objects.create(
                 concept=concept,
                 language=language,
+                category=category,
                 word=word,
                 tip=item.get("tip", ""),
                 sentence=item.get("sentence", ""),
