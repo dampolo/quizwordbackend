@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework import status
+from rest_framework.exceptions import APIException
 
 from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
 from vocabulary_app.api.serializer import VocabularyConceptSerializer
@@ -106,9 +108,8 @@ class QuizSerializer(serializers.ModelSerializer):
             ).exists()
 
         if exist:
-            raise serializers.ValidationError({
-                "detail": "Das Quiz existiert bereits."
-            })
+            # Custom error
+            raise ConflictError()
 
         return attrs
 
@@ -177,3 +178,8 @@ class QuizAttemptDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizAttempt
         fields = "__all__"
+
+
+class ConflictError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Das Quiz existiert bereits."
