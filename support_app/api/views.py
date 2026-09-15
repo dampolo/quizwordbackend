@@ -32,7 +32,6 @@ class SupportView(APIView):
             # always your verified sender
             from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
             to=[settings.DEFAULT_FROM_EMAIL],
-            reply_to=[email],
         )
 
         email_to_support.content_subtype = "html"
