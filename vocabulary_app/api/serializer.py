@@ -521,3 +521,23 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
             translation.save()
 
         return instance
+
+# Serializer for Search
+class VocabularySearchSerializer(serializers.ModelSerializer):
+    concept_id = serializers.IntegerField(source="concept")
+    native_language = serializers.SerializerMethodField()
+    target_language = serializers.CharField(source="language.language_name")
+
+    class Meta:
+        model = VocabularyWord
+        fields = [
+            'concept_id',
+            'word',
+            'native_language',
+            'target_language',
+        ]
+
+    def get_native_language(self, obj):
+        user = obj.concept.user
+
+        return user.user_languages.native_language.language_name
