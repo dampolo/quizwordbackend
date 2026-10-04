@@ -524,20 +524,54 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
 
 # Serializer for Search
 class VocabularySearchSerializer(serializers.ModelSerializer):
-    concept_id = serializers.IntegerField(source="concept")
+    concept_id = serializers.IntegerField(source="concept.id")
+    native_word = serializers.SerializerMethodField()
+    target_word = serializers.SerializerMethodField()
     native_language = serializers.SerializerMethodField()
-    target_language = serializers.CharField(source="language.language_name")
+    target_language = serializers.SerializerMethodField()
 
     class Meta:
         model = VocabularyWord
         fields = [
-            'concept_id',
-            'word',
-            'native_language',
-            'target_language',
+            "concept_id",
+            "native_word",
+            "target_word",
+            "native_language",
+            "target_language",
         ]
 
-    def get_native_language(self, obj):
-        user = obj.concept.user
+    def get_native_word(self, obj):
+        native_language = obj.concept.user.user_languages.native_language
 
-        return user.user_languages.native_language.language_name
+        translation = obj.concept.translations.filter(
+            language=native_language
+        ).first()
+
+        return translation.word
+
+    def get_target_word(self, obj):
+        native_language = obj.concept.user.user_languages.native_language
+
+        translation = obj.concept.translations.exclude(
+            language=native_language
+        ).first()
+
+        return translation.word
+
+    def get_native_language(self, obj):
+        native_language = obj.concept.user.user_languages.native_language
+
+        translation = obj.concept.translations.filter(
+            language=native_language
+        ).first()
+
+        return translation.language.language_name
+
+    def get_target_language(self, obj):
+        native_language = obj.concept.user.user_languages.native_language
+
+        translation = obj.concept.translations.exclude(
+            language=native_language
+        ).first()
+
+        return translation.language.language_name

@@ -14,6 +14,7 @@ from vocabulary_app.api.serializer import (LanguageSerializer,
                                            VocabularyConceptSerializer,
                                            VocabularyConceptUpdateSerializer,
                                            VocabularyEntryCreateSerializer,
+                                           VocabularySearchSerializer,
                                            VocabularyWordSerializer)
 from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
                                    VocabularyConcept, VocabularyWord)
@@ -207,4 +208,23 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
                 "requires_confirmation": False,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+class VocabularySearchView(generics.ListAPIView):
+    serializer_class = VocabularySearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["word"]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        return (
+            VocabularyWord.objects
+            .filter(concept__user=user)
+            .select_related(
+                "concept",
+                "language",
+            )
         )

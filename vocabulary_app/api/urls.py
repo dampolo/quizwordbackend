@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import (LanguageViewSet, UserLanguageViewSet,
                     VocabularyCategoryViewSet, VocabularyConceptViewSet,
-                    VocabularyWordViewSet)
+                    VocabularyWordViewSet, VocabularySearchView)
 
 router = DefaultRouter()
 router.register(
@@ -27,4 +27,5 @@ router.register(
 urlpatterns = [
     path("", include(router.urls)),
     path("user-languages/", UserLanguageViewSet.as_view(), name="user-languages"),
+    path("vocabulary-search/", VocabularySearchView.as_view(), name="vocabulary-search",),
 ]
