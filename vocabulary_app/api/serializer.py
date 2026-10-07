@@ -61,6 +61,7 @@ class UserLanguageSerializer(serializers.ModelSerializer):
 
         return instance
 
+
 class VocabularyWordSerializer(serializers.ModelSerializer):
     concept = serializers.PrimaryKeyRelatedField(read_only=True)
 
@@ -70,6 +71,11 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
 
     language_name = serializers.CharField(
         source="language.language_name",
+        read_only=True,
+    )
+
+    language_code = serializers.CharField(
+        source="language.language_code",
         read_only=True,
     )
 
@@ -100,6 +106,7 @@ class VocabularyWordSerializer(serializers.ModelSerializer):
             "concept",
             "language",
             "language_name",
+            "language_code",
             "category_id",
             "category_name",
             "word",
@@ -208,7 +215,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
         )
 
         return concept
-    
+
     def _reset_messages(self):
         self.info_messages = []
         self.requires_confirmation = False
@@ -273,8 +280,8 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
             native_word,
             allow_new_meaning,
             user,
-            ):
-        
+    ):
+
         # Get all translations except the native language
         other_items = [
             item
@@ -349,6 +356,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
         # User confirmed -> create a new concept
         return VocabularyConcept.objects.create(user=user)
 
+
 class VocabularyCategorySerializer(serializers.ModelSerializer):
     language_id = serializers.PrimaryKeyRelatedField(
         source="target_language",
@@ -385,20 +393,22 @@ class VocabularyCategorySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        language_id = attrs["target_language"] # Because of "source" it mus be target_language. 
+        # Because of "source" it mus be target_language.
+        language_id = attrs["target_language"]
         category_name = attrs["category_name"]
 
         exist = VocabularyCategory.objects.filter(
-            user=user, 
-            target_language=language_id, 
+            user=user,
+            target_language=language_id,
             category_name__iexact=category_name
-            ).exists()
+        ).exists()
         if exist:
             raise serializers.ValidationError({
                 "detail": "Diese Kategorie existiert bereits."
             })
 
         return attrs
+
 
 class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
     language_name = serializers.CharField(
@@ -416,6 +426,8 @@ class VocabularyWordSimpleSerializer(serializers.ModelSerializer):
         ]
 
 # GET
+
+
 class VocabularyConceptSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
@@ -523,6 +535,8 @@ class VocabularyConceptUpdateSerializer(serializers.Serializer):
         return instance
 
 # Serializer for Search
+
+
 class VocabularySearchSerializer(serializers.ModelSerializer):
     concept_id = serializers.IntegerField(source="concept.id")
     native_word = serializers.SerializerMethodField()

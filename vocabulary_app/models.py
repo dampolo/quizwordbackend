@@ -8,12 +8,20 @@ class Language(models.Model):
         unique=True,
     )
 
+    language_code = models.CharField(
+        max_length=10,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         ordering = ["language_name"]
 
     def __str__(self):
         return f"{self.language_name}"
-    
+
+
 class UserLanguages(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -42,7 +50,7 @@ class VocabularyCategory(models.Model):
                              on_delete=models.CASCADE,
                              related_name="vocabulary_categories",
                              )
-    
+
     category_name = models.CharField(max_length=100, default="STANDARD")
 
     target_language = models.ForeignKey(
@@ -66,6 +74,7 @@ class VocabularyCategory(models.Model):
     def __str__(self):
         return f"{self.category_name}"
 
+
 class VocabularyConcept(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -78,6 +87,7 @@ class VocabularyConcept(models.Model):
 
     def __str__(self):
         return f"Concept {self.id}"
+
 
 class VocabularyWord(models.Model):
     concept = models.ForeignKey(
@@ -107,7 +117,6 @@ class VocabularyWord(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
     class Meta:
         ordering = ["id"]
