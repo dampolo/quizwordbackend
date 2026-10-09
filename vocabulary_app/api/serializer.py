@@ -9,7 +9,7 @@ from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
-        fields = ["id", "language_name"]
+        fields = ["id", "language_name", "language_code"]
         read_only_fields = ["id"]
 
 
