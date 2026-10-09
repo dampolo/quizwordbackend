@@ -1,7 +1,7 @@
 import html
 
 import requests
-from quizword_core import settings
+from django.conf import settings
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
