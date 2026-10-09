@@ -34,6 +34,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
 
+# Google API Translate
+GOOGLE_TRANSLATE_API_KEY = os.environ["GOOGLE_TRANSLATE_API_KEY"]
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
@@ -60,6 +63,7 @@ INSTALLED_APPS = [
     'vocabulary_app',
     'quiz_app',
     'customer_app',
+    'translation_app',
 ]
 
 MIDDLEWARE = [
