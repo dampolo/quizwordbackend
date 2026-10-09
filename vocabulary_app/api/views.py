@@ -110,6 +110,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
         "language": ["exact"],
         "category": ["exact"],
         "category__target_language": ["exact"],
+        "created_at": ["date"],
     }
 
     def get_queryset(self):
