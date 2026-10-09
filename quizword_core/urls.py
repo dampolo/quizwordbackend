@@ -27,8 +27,6 @@ urlpatterns = [
     path('api/', include('customer_app.api.urls')),
     path('api/', include('support_app.api.urls')),
     path('api/', include('translation_app.api.urls')),
-
-
 ]
 
 if settings.DEBUG:
