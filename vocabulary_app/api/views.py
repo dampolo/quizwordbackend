@@ -30,6 +30,7 @@ class LanguageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
+
 class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
     serializer_class = UserLanguageSerializer
     permission_classes = [IsAuthenticated]
@@ -44,7 +45,7 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
             return Response({
                 "languages_active": False,
             },
-            status=status.HTTP_200_OK,
+                status=status.HTTP_200_OK,
             )
 
         serializer = self.get_serializer(instance)
@@ -68,11 +69,15 @@ class UserLanguageViewSet(generics.RetrieveUpdateAPIView):
 
         return Response(serializer.data)
 
+
 class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyCategorySerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = {"target_language": ["exact"]}
+    filterset_fields = {
+        "target_language": ["exact"],
+        "created_at": ["date"],
+    }
 
     def get_queryset(self):
         native_language = self.request.user.user_languages.native_language
@@ -91,7 +96,6 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
             })
         serializer.save(user=self.request.user)
 
-    
 
 # CRUD word
 class VocabularyWordViewSet(viewsets.ModelViewSet):
@@ -112,7 +116,7 @@ class VocabularyWordViewSet(viewsets.ModelViewSet):
         return VocabularyWord.objects.filter(
             concept__user=self.request.user
         )
-    
+
 
 class VocabularyConceptViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -177,7 +181,7 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
 
         context["language"] = language
         return context
-    
+
     def get_serializer_class(self):
         if self.action == "create":
             return VocabularyEntryCreateSerializer
@@ -209,6 +213,7 @@ class VocabularyConceptViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+
 
 class VocabularySearchView(generics.ListAPIView):
     serializer_class = VocabularySearchSerializer
