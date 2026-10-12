@@ -17,6 +17,7 @@ router.register(
     VocabularyWordViewSet,
     basename="vocabulary-word"
 )
+
 router.register(r"languages", LanguageViewSet, basename="languages")
 router.register(
     r"concepts",

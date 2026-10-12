@@ -20,6 +20,7 @@ class QuizViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = {"target_language": ["exact"]}
 
+    # User can see only his quizzes
     def get_queryset(self):
         return Quiz.objects.filter(user=self.request.user)
 

@@ -15,7 +15,10 @@ from vocabulary_app.api.serializer import (LanguageSerializer,
                                            VocabularyConceptUpdateSerializer,
                                            VocabularyEntryCreateSerializer,
                                            VocabularySearchSerializer,
-                                           VocabularyWordSerializer)
+                                           VocabularyWordSerializer,
+                                           UpdateCategorySerializer,
+                                           GetCategorySerializer
+                                           )
 from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
                                    VocabularyConcept, VocabularyWord)
 
@@ -80,11 +83,24 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     }
 
     def get_queryset(self):
-        native_language = self.request.user.user_languages.native_language
-        learning_languages = self.request.user.user_languages.learning_languages.all()
+        user = self.request.user
+        user_languages = user.user_languages
 
         return VocabularyCategory.objects.filter(
-            user=self.request.user, target_language__in=learning_languages).exclude(target_language=native_language)
+            user=user,
+            target_language__in=user_languages.learning_languages.all(),
+        ).exclude(
+            target_language=user_languages.native_language,
+        )
+
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            return GetCategorySerializer
+
+        if self.action in ["update", "partial_update"]:
+            return UpdateCategorySerializer
+
+        return VocabularyCategorySerializer
 
     def perform_create(self, serializer):
         if not UserLanguageStatus.languages_active(self.request.user):

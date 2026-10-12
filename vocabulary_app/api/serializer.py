@@ -589,3 +589,53 @@ class VocabularySearchSerializer(serializers.ModelSerializer):
         ).first()
 
         return translation.language.language_name
+
+
+class GetCategorySerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(source="id", read_only=True)
+    concepts = serializers.SerializerMethodField()
+    concepts_count = serializers.SerializerMethodField()
+    language_name = serializers.CharField(
+        source="target_language", read_only=True)
+    language_id = serializers.IntegerField(
+        source="target_language.id", read_only=True)
+    
+    class Meta:
+        model = VocabularyCategory
+        fields = (
+            "category_id",
+            "category_name",
+            "language_id",
+            "concepts",
+            "concepts_count",
+            "language_name",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_valid_concepts(self, obj):
+        return VocabularyConcept.objects.filter(
+            user=self.context["request"].user,
+            translations__category=obj,
+        ).distinct()
+
+    def get_concepts(self, obj):
+        concepts = self.get_valid_concepts(obj)
+        serializer = VocabularyConceptSerializer(
+            concepts,
+            many=True,
+            context={
+                "request": self.context["request"],
+                "language": obj.target_language.id,
+            },
+        )
+        return serializer.data
+
+    def get_concepts_count(self, obj):
+        return self.get_valid_concepts(obj).count()
+
+
+class UpdateCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VocabularyCategory
+        fields = ["category_name"]
