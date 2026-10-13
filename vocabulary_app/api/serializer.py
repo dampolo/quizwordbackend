@@ -614,9 +614,14 @@ class GetCategorySerializer(serializers.ModelSerializer):
         )
 
     def get_valid_concepts(self, obj):
+        user = self.context["request"].user
         return VocabularyConcept.objects.filter(
-            user=self.context["request"].user,
+            user=user,
             translations__category=obj,
+        ).filter(
+            translations__language=user.user_languages.native_language,
+        ).filter(
+            translations__language=obj.target_language,
         ).distinct()
 
     def get_concepts(self, obj):
