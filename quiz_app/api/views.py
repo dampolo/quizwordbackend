@@ -33,7 +33,7 @@ class QuizViewSet(viewsets.ModelViewSet):
 
         if self.action in ["update", "partial_update"]:
             return UpdateQuizSerializer
-        
+
         return QuizSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -178,7 +178,7 @@ class LastQuizView(APIView):
             return Response(
                 {'detail': 'Du hast bis jetzt keine Quize erstellt.'},
                 status=status.HTTP_404_NOT_FOUND
-                )
+            )
 
         quiz = last_quiz.quiz
 
@@ -208,3 +208,29 @@ class LastFlipcardQuizView(APIView):
         return Response(
             serializer.data,
         )
+
+
+class RandomFlipcardQuizView(APIView):
+    def get(self, request):
+        language_id = request.query_params.get("language")
+
+        quizzes = Quiz.objects.filter(user=request.user)
+
+        if language_id:
+            quizzes = quizzes.filter(target_language_id=language_id)
+
+        quiz = quizzes.order_by("?").first()
+        
+        
+        if quiz is None:
+            return Response(
+                {"detail": "Du hast bis jetzt keine Quize erstellt."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = GetQuizSerializer(
+                    quiz,
+                    context={"request": request},
+                )
+
+        return Response(serializer.data)

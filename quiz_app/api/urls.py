@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (LastQuizView, QuizAttemptViewSet, QuizSubmitAPIView,
-                    QuizViewSet, LastFlipcardQuizView)
+                    QuizViewSet, LastFlipcardQuizView, RandomFlipcardQuizView)
 
 router = DefaultRouter()
 router.register(r'quizzes', QuizViewSet, basename='quiz')
@@ -16,5 +16,10 @@ urlpatterns = [
         LastFlipcardQuizView.as_view(),
         name="last-flipcard-quiz",
     ),
+    path(
+            "random-flipcard-quiz/",
+            RandomFlipcardQuizView.as_view(),
+            name="random-flipcard-quiz",
+        ),
     path('', include(router.urls)),
 ]

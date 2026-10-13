@@ -154,6 +154,7 @@ class MeView(APIView):
             'id': request.user.id,
             'username': request.user.username,
             'role': request.user.role,
+            'auth_provider': request.auth.get('auth_provider'),
             "languages_active": UserLanguageStatus.languages_active(request.user),
             "is_superuser": request.user.is_superuser,
         })

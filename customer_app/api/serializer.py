@@ -4,6 +4,7 @@ from auth_app.models import User
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = [

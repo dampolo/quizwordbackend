@@ -72,6 +72,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Overwrite the token
         token['role'] = user.role
+        token['auth_provider'] = 'email'
 
         return token
 
