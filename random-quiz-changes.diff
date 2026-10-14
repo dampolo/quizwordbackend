@@ -1,0 +1,75 @@
+--- before/views.py
++++ after/views.py
+@@ -1,3 +1,4 @@
++from django.db import transaction
+ from django.utils import timezone
+ from django_filters.rest_framework import DjangoFilterBackend
+ from rest_framework import filters, status, viewsets
+@@ -238,8 +239,18 @@
+ 
+ 
+ class CreateRandomQuizView(APIView):
++    permission_classes = [IsAuthenticated]
++
+     def post(self, request):
+         language_id = request.query_params.get("language")
++        try:
++            language_id = int(language_id)
++        except (TypeError, ValueError):
++            return Response(
++                {"language": "Bitte eine gültige Sprach-ID angeben."},
++                status=status.HTTP_400_BAD_REQUEST,
++            )
++
+         user = request.user
+ 
+         native_language = user.user_languages.native_language
+@@ -258,8 +269,28 @@
+             id__in=target_words.values_list("concept_id", flat=True)
+         ).order_by("?")[:5]
+ 
+-        QuizSerializer(concepts, context={"request": request})
++        concept_ids = [concept.id for concept in concepts]
++        if len(concept_ids) < 5:
++            return Response(
++                {"detail": "Für dieses Sprachpaar werden mindestens 5 Konzepte benötigt."},
++                status=status.HTTP_400_BAD_REQUEST,
++            )
++
++        serializer = QuizSerializer(
++            data={
++                "quiz_name": request.data.get(
++                    "quiz_name", f"Random Quiz {timezone.now().isoformat()}"
++                ),
++                "target_language": language_id,
++                "concepts": concept_ids,
++            },
++            context={"request": request},
++        )
++        serializer.is_valid(raise_exception=True)
++        with transaction.atomic():
++            serializer.save()
+ 
+         return Response(
++            serializer.data,
+             status=status.HTTP_201_CREATED,
+         )
+--- before/urls.py
++++ after/urls.py
+@@ -1,7 +1,7 @@
+ from django.urls import include, path
+ from rest_framework.routers import DefaultRouter
+ 
+-from .views import (LastQuizView, QuizAttemptViewSet, QuizSubmitAPIView,
++from .views import (CreateRandomQuizView, LastQuizView, QuizAttemptViewSet, QuizSubmitAPIView,
+                     QuizViewSet, LastFlipcardQuizView, RandomFlipcardQuizView)
+ 
+ router = DefaultRouter()
+@@ -9,6 +9,7 @@
+ router.register(r'attempts', QuizAttemptViewSet, basename='attempt')
+ 
+ urlpatterns = [
++    path('random-quiz/', CreateRandomQuizView.as_view(), name='create-random-quiz'),
+     path('quiz-answers/<int:quiz_id>/submit/', QuizSubmitAPIView.as_view(), name='quiz-answer'),
+     path('last-quiz/', LastQuizView.as_view(), name='last-quiz'),
+     path(

@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -220,8 +221,7 @@ class RandomFlipcardQuizView(APIView):
             quizzes = quizzes.filter(target_language_id=language_id)
 
         quiz = quizzes.order_by("?").first()
-        
-        
+
         if quiz is None:
             return Response(
                 {"detail": "Du hast bis jetzt keine Quize erstellt."},
@@ -229,8 +229,69 @@ class RandomFlipcardQuizView(APIView):
             )
 
         serializer = GetQuizSerializer(
-                    quiz,
-                    context={"request": request},
-                )
+            quiz,
+            context={"request": request},
+        )
 
         return Response(serializer.data)
+
+# Random quiz with 5 words.
+
+
+class CreateRandomQuizView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        language_id = request.query_params.get("language")
+        try:
+            language_id = int(language_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Bitte eine gültige Sprach-ID angeben."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = request.user
+
+        native_language = user.user_languages.native_language
+
+        native_concept_ids = VocabularyWord.objects.filter(
+            language=native_language,
+            concept__user=user,
+        ).values_list("concept_id", flat=True)
+
+        target_words = VocabularyWord.objects.filter(
+            language_id=language_id,
+            concept_id__in=native_concept_ids,
+        )
+
+        concepts = VocabularyConcept.objects.filter(
+            id__in=target_words.values_list("concept_id", flat=True)
+        ).order_by("?")[:5]
+
+        concept_ids = [concept.id for concept in concepts]
+        if len(concept_ids) < 5:
+            return Response(
+                {"detail": "Für dieses Sprachpaar werden mindestens 5 Konzepte benötigt."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = QuizSerializer(
+            data={
+                "quiz_name": request.data.get(
+                    "quiz_name", f"Random Quiz {timezone.localtime():%d.%m.%Y %H:%M:%S}"
+                ),
+                "target_language": language_id,
+                "concepts": concept_ids,
+            },
+            context={"request": request},
+        )
+
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
