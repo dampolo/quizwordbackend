@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -5,6 +7,7 @@ from django.core.mail import EmailMessage
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -243,7 +246,8 @@ class EmailService():
         html_content= render_to_string(
             'templates/confirm_your_email.html',
             {
-                'active_link': active_link
+                'active_link': active_link,
+                'valid': timezone.localtime() + timedelta(seconds=settings.PASSWORD_RESET_TIMEOUT),
             }
         )
 
@@ -337,3 +341,7 @@ class ChangePasswordView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+class ResendVerificationView(APIView):
+    pass

@@ -257,3 +257,8 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
+
+# PasswordResetTokenGenerator valid for 2 hour
+# PASSWORD_RESET_TIMEOUT = 2 * 60 * 60
+PASSWORD_RESET_TIMEOUT = 60
+
