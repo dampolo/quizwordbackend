@@ -1,8 +1,10 @@
 from datetime import timedelta
+from hashlib import sha256
 
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.db import transaction
 from django.shortcuts import redirect, render
@@ -12,10 +14,11 @@ from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView, View
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -343,5 +346,36 @@ class ChangePasswordView(APIView):
         )
 
 
+class ResendVerificationThrottle(AnonRateThrottle):
+    scope = 'resend_verification'
+    rate = '5/min'
+
+
 class ResendVerificationView(APIView):
-    pass
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [ResendVerificationThrottle]
+
+    def post(self, request):
+        email = serializers.EmailField(max_length=150).run_validation(
+            request.data.get('email')
+        ).lower()
+        response = Response(
+            {'message': 'Falls für diese E-Mail-Adresse ein unbestätigtes Konto besteht, '
+                        'haben wir einen neuen Bestätigungslink gesendet.'},
+            status=status.HTTP_200_OK,
+        )
+        # Apply the same cooldown to every address without exposing account status.
+        cache_key = 'resend_verification:' + sha256(email.encode()).hexdigest()
+        if not cache.add(cache_key, True, timeout=60):
+            return response
+
+        user = User.objects.filter(email__iexact=email, is_active=False).first()
+        if user is not None:
+            try:
+                EmailService.confirm_your_email(user, request)
+            except Exception:
+                cache.delete(cache_key)
+                raise
+
+        return response
