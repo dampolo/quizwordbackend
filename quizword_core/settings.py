@@ -259,6 +259,5 @@ SIMPLE_JWT = {
 }
 
 # PasswordResetTokenGenerator valid for 2 hour
-# PASSWORD_RESET_TIMEOUT = 2 * 60 * 60
-PASSWORD_RESET_TIMEOUT = 60
+PASSWORD_RESET_TIMEOUT = 2 * 60 * 60
 
