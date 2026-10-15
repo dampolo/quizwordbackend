@@ -28,7 +28,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
 from auth_app.models import User
 from auth_app.user_language_status import UserLanguageStatus
 
-from .serializer import (ChangeEmailSerializer, ChangePasswordSerializer,
+from .serializer import (ChangeEmailSerializer,
                          CustomTokenObtainPairSerializer,
                          RegistrationSerializer)
 
@@ -317,31 +317,6 @@ class ChangeEmailView(APIView):
 
         return Response(
             {"detail": "E-Mail-Adresse wurde erfolgreich geändert."},
-            status=status.HTTP_200_OK
-        )
-
-class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={"request": request},
-        )
-
-        serializer.is_valid(raise_exception=True)
-
-        user= request.user
-        user.set_password(
-            serializer.validated_data['new_password']
-        )
-
-        user.save()
-
-        return Response(
-            {
-                'detail': 'Passwort wurde erfolgreich geändert.'
-            },
             status=status.HTTP_200_OK
         )
 

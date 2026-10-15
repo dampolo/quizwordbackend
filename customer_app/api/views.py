@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializer import (ChangeUsernameSerializer, CustomerProfileSerializer,
+from .serializer import (ChangePasswordSerializer, ChangeUsernameSerializer,
+                         CustomerProfileSerializer,
                          DeleteAccountSerializer)
 
 
@@ -48,5 +49,30 @@ class DeleteAccountView(APIView):
 
         return Response(
             {'detail': 'Dein Konto wurde gelöscht.'},
+            status=status.HTTP_200_OK
+        )
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        user= request.user
+        user.set_password(
+            serializer.validated_data['new_password']
+        )
+
+        user.save()
+
+        return Response(
+            {
+                'detail': 'Passwort wurde erfolgreich geändert.'
+            },
             status=status.HTTP_200_OK
         )

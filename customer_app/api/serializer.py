@@ -1,6 +1,8 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from auth_app.models import User
+from auth_app.validators import CustomPasswordValidator
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
@@ -88,5 +90,35 @@ class DeleteAccountSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"password": "Dein Passwort ist nicht korrekt."}
             )
+
+        return attrs
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    repeated_new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                "Das aktuelle Passwort ist ungültig."
+            )
+
+        return value
+
+    def validate_new_password(self, value):
+        try:
+            CustomPasswordValidator().validate(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.messages)
+
+        return value
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["repeated_new_password"]:
+            raise serializers.ValidationError({
+                "repeated_new_password": "Passwörter stimmen nicht überein."
+            })
 
         return attrs
