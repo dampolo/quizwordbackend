@@ -252,7 +252,7 @@ AUTH_USER_MODEL = 'auth_app.User'
 RECAPTCHA_SECRET_KEY = env("RECAPTCHA_SECRET_KEY")
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
