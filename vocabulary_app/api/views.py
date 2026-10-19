@@ -77,6 +77,7 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = VocabularyCategorySerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    pagination_class = None
     filterset_fields = {
         "target_language": ["exact"],
         "created_at": ["date"],
@@ -101,6 +102,26 @@ class VocabularyCategoryViewSet(viewsets.ModelViewSet):
             return UpdateCategorySerializer
 
         return VocabularyCategorySerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        concepts = serializer.get_valid_concepts(instance).order_by("pk")
+        paginator = pagination.VocabularyWordsPagination()
+        page = paginator.paginate_queryset(concepts, request, view=self)
+        concept_serializer = VocabularyConceptSerializer(
+            page,
+            many=True,
+            context={"request": request, "language": instance.target_language_id},
+        )
+        # Keep category metadata without serializing the complete word list.
+        serializer.fields.pop("concepts")
+        data = dict(serializer.data)
+        data["concepts"] = concept_serializer.data
+        data["count"] = paginator.page.paginator.count
+        data["next"] = paginator.get_next_link()
+        data["previous"] = paginator.get_previous_link()
+        return Response(data)
 
     def perform_create(self, serializer):
         if not UserLanguageStatus.languages_active(self.request.user):
