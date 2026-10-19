@@ -12,6 +12,7 @@ from quiz_app.api.serializer import (GetQuizSerializer,
                                      UpdateQuizSerializer)
 from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
 from vocabulary_app.models import VocabularyConcept, VocabularyWord
+from vocabulary_app.api.serializer import VocabularyConceptSerializer
 
 
 # Use can see all his quizes
@@ -295,3 +296,38 @@ class CreateRandomQuizView(APIView):
             serializer.data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class RandomRepeadWords(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        language_id = request.query_params.get("language")
+
+        user = request.user
+
+        native_language = user.user_languages.native_language
+
+        native_concept_ids = VocabularyWord.objects.filter(
+            language=native_language,
+            concept__user=user,
+        ).values_list("concept_id", flat=True)
+
+        target_words = VocabularyWord.objects.filter(
+            language_id=language_id,
+            concept_id__in=native_concept_ids,
+        )
+
+        concept = VocabularyConcept.objects.filter(
+            id__in=target_words.values_list("concept_id", flat=True)
+        ).order_by("?").first()
+
+        serializer = VocabularyConceptSerializer(
+            concept,
+            context={
+                "request": request,
+                "language": language_id,
+            },
+        )
+
+        return Response(serializer.data)
