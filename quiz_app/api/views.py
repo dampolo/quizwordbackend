@@ -320,10 +320,11 @@ class RandomRepeadWords(APIView):
 
         concept = VocabularyConcept.objects.filter(
             id__in=target_words.values_list("concept_id", flat=True)
-        ).order_by("?").first()
+        ).order_by("?")
 
         serializer = VocabularyConceptSerializer(
             concept,
+            many=True,
             context={
                 "request": request,
                 "language": language_id,
