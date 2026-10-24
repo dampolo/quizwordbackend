@@ -78,7 +78,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             key='access_token',
             value=str(access),
             httponly=True,
-            secure=True,
+            secure=settings.AUTH_COOKIE_SECURE,
             samesite='Lax',
             max_age=2 * 60 * 60,
         )
@@ -87,7 +87,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=True,
+            secure=settings.AUTH_COOKIE_SECURE,
             samesite='Lax',
             max_age=15 * 24 * 60 * 60,
         )
@@ -134,7 +134,7 @@ class CookieTokenRefreshView(TokenRefreshView):
             key="access_token",
             value=str(access_token),
             httponly=True,
-            secure=True,
+            secure=settings.AUTH_COOKIE_SECURE,
             samesite="Lax",
             max_age=2 * 60 * 60,
         )
@@ -144,7 +144,7 @@ class CookieTokenRefreshView(TokenRefreshView):
                 key="refresh_token",
                 value=str(new_refresh_token),
                 httponly=True,
-                secure=True,
+                secure=settings.AUTH_COOKIE_SECURE,
                 samesite="Lax",
                 max_age=15 * 24 * 60 * 60,
             )

@@ -40,10 +40,17 @@ GOOGLE_TRANSLATE_API_KEY = os.environ["GOOGLE_TRANSLATE_API_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'quiz-word.com',
                  '34.32.2.236']
+
+# Allow the local Wi-Fi address only during development.
+if DEBUG:
+    ALLOWED_HOSTS.append('192.168.178.92')
+
+# Local HTTP development cannot use HTTPS-only authentication cookies.
+AUTH_COOKIE_SECURE = not DEBUG
 
 
 # Application definition
@@ -94,6 +101,10 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5500',
 
     'http://localhost:5173',
+
+    "http://127.0.0.1:8081",
+
+    "http://localhost:8081",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -115,6 +126,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5500',
 
     'http://localhost:5173',
+
+    "http://127.0.0.1:8081",
+
+    "http://localhost:8081",
 ]
 
 ROOT_URLCONF = 'quizword_core.urls'
@@ -213,7 +228,7 @@ STORAGES = {
     },
 }
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Additional dirs for development
 STATICFILES_DIRS = [
@@ -260,4 +275,3 @@ SIMPLE_JWT = {
 
 # PasswordResetTokenGenerator valid for 2 hour
 PASSWORD_RESET_TIMEOUT = 2 * 60 * 60
-
