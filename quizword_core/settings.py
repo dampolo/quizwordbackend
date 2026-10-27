@@ -42,12 +42,18 @@ DEBUG = env.bool("DEBUG", default=False)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'quiz-word.com',
-                 '34.32.2.236']
+# Hostnames/IPs used to reach Django; do not include a scheme or port.
+# 0.0.0.0 is a server bind address and does not need to be listed here.
+ALLOWED_HOSTS = [
+    'quiz-word.com',
+    'www.quiz-word.com',
+]
 
-# Allow the local Wi-Fi address only during development.
 if DEBUG:
-    ALLOWED_HOSTS.append('192.168.178.92')
+    ALLOWED_HOSTS += [
+        '127.0.0.1',  # Backend address used by the local Vite web app.
+        '192.168.178.92',  # Backend address used by the native mobile app.
+    ]
 
 # Local HTTP development cannot use HTTPS-only authentication cookies.
 AUTH_COOKIE_SECURE = not DEBUG
@@ -85,52 +91,30 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Browser origins allowed to read cross-origin API responses.
+# Origins include the scheme and port, without a path or trailing slash.
+CORS_ALLOWED_ORIGINS = [
+    'https://quiz-word.com',
+    'https://www.quiz-word.com',
+]
+
+# Origins trusted by Django's CSRF origin checks for protected requests.
+# This does not replace the CSRF token required by CSRF-protected views.
 CSRF_TRUSTED_ORIGINS = [
     'https://quiz-word.com',
-
     'https://www.quiz-word.com',
-
-    'http://127.0.0.1:5500',
-
-    'http://127.0.0.1:4200',
-
-    "http://127.0.0.1:5173",
-
-    'http://localhost:4200',
-
-    'http://localhost:5500',
-
-    'http://localhost:5173',
-
-    "http://127.0.0.1:8081",
-
-    "http://localhost:8081",
 ]
 
+if DEBUG:
+    # Matches: npx vite --host 127.0.0.1 (default port 5173).
+    CORS_ALLOWED_ORIGINS.append('http://127.0.0.1:5173')
+    CSRF_TRUSTED_ORIGINS.append('http://127.0.0.1:5173')
+
+# Native mobile requests do not require a browser CORS origin entry.
+# Add an Expo origin here only if you also run Expo in a web browser.
+
+# Allow the web app to send the authentication cookies with API requests.
 CORS_ALLOW_CREDENTIALS = True
-
-CORS_ALLOWED_ORIGINS = [
-
-    'https://quiz-word.com',
-
-    'https://www.quiz-word.com',
-
-    'http://127.0.0.1:5500',
-
-    'http://127.0.0.1:4200',
-
-    "http://127.0.0.1:5173",
-
-    'http://localhost:4200',
-
-    'http://localhost:5500',
-
-    'http://localhost:5173',
-
-    "http://127.0.0.1:8081",
-
-    "http://localhost:8081",
-]
 
 ROOT_URLCONF = 'quizword_core.urls'
 
