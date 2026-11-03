@@ -31,6 +31,7 @@ from auth_app.user_language_status import UserLanguageStatus
 from .serializer import (ChangeEmailSerializer,
                          CustomTokenObtainPairSerializer,
                          RegistrationSerializer)
+from allauth.account.models import EmailAddress
 
 
 class RegistrationView(APIView):
@@ -44,7 +45,7 @@ class RegistrationView(APIView):
         if serializer.is_valid():
             saved_account = serializer.save()
             saved_account.is_active = False
-            saved_account.save() 
+            saved_account.save()
             EmailService.confirm_your_email(saved_account, request)
 
             data = {
@@ -160,7 +161,7 @@ class MeView(APIView):
             'id': request.user.id,
             'username': request.user.username,
             'role': request.user.role,
-            'auth_provider': request.auth.get('auth_provider'),
+            'auth_provider': request.auth.get('auth_provider') if request.auth is not None else None,
             "languages_active": UserLanguageStatus.languages_active(request.user),
             "is_superuser": request.user.is_superuser,
         })
@@ -237,8 +238,9 @@ class ResetPasswordView(APIView):
 
         return Response({'message': 'Password reset successful'})
 
+
 class EmailService():
-    
+
     @staticmethod
     def confirm_your_email(user, request):
         token = PasswordResetTokenGenerator().make_token(user)
@@ -246,7 +248,7 @@ class EmailService():
 
         active_link = f"{settings.DEFAULT_API}verify-email/{uidb64}/{token}"
 
-        html_content= render_to_string(
+        html_content = render_to_string(
             'templates/confirm_your_email.html',
             {
                 'active_link': active_link,
@@ -265,6 +267,7 @@ class EmailService():
         email_message.send()
 
         return Response({'message': 'Email confirmation link sent'})
+
 
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
@@ -295,10 +298,17 @@ class VerifyEmailView(APIView):
         user.is_active = True
         user.save(update_fields=["is_active"])
 
+        EmailAddress.objects.update_or_create(
+            user=user,
+            email=user.email,
+            defaults={"verified": True, "primary": True},
+        )
+
         return Response(
             {"message": "Email successfully verified"},
             status=status.HTTP_200_OK
         )
+
 
 class ChangeEmailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -345,7 +355,8 @@ class ResendVerificationView(APIView):
         if not cache.add(cache_key, True, timeout=60):
             return response
 
-        user = User.objects.filter(email__iexact=email, is_active=False).first()
+        user = User.objects.filter(
+            email__iexact=email, is_active=False).first()
         if user is not None:
             try:
                 EmailService.confirm_your_email(user, request)

@@ -27,6 +27,8 @@ urlpatterns = [
     path('api/', include('customer_app.api.urls')),
     path('api/', include('support_app.api.urls')),
     path('api/', include('translation_app.api.urls')),
+    # Google
+    path("accounts/", include("allauth.urls")),
 ]
 
 if settings.DEBUG:
