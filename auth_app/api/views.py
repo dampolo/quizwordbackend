@@ -44,8 +44,11 @@ class RegistrationView(APIView):
         data = {}
         if serializer.is_valid():
             saved_account = serializer.save()
-            saved_account.is_active = False
-            saved_account.save()
+            EmailAddress.objects.get_or_create(
+                user=saved_account,
+                email=saved_account.email,
+                defaults={"verified": False, "primary": True},
+            )
             EmailService.confirm_your_email(saved_account, request)
 
             data = {
@@ -164,6 +167,11 @@ class MeView(APIView):
             'auth_provider': request.auth.get('auth_provider') if request.auth is not None else None,
             "languages_active": UserLanguageStatus.languages_active(request.user),
             "is_superuser": request.user.is_superuser,
+            "is_email_verified": EmailAddress.objects.filter(
+                user=request.user,
+                email__iexact=request.user.email,
+                verified=True,
+            ).exists(),
         })
 
 
@@ -289,14 +297,14 @@ class VerifyEmailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if user.is_active:
-            return Response(
-                {"message": "Account already verified"},
-                status=status.HTTP_200_OK
-            )
-        print("TOKEN VALID, ACTIVATING USER")
-        user.is_active = True
-        user.save(update_fields=["is_active"])
+        # if user.is_active:
+        #     return Response(
+        #         {"message": "Account already verified"},
+        #         status=status.HTTP_200_OK
+        #     )
+        # print("TOKEN VALID, ACTIVATING USER")
+        # user.is_active = True
+        # user.save(update_fields=["is_active"])
 
         EmailAddress.objects.update_or_create(
             user=user,
@@ -356,9 +364,16 @@ class ResendVerificationView(APIView):
             return response
 
         user = User.objects.filter(
-            email__iexact=email, is_active=False).first()
-        if user is not None:
+            email__iexact=email, is_active=True).first()
+        print("TEST1")
+
+        if user is not None and not EmailAddress.objects.filter(
+            user=user,
+            email__iexact=user.email,
+            verified=True,
+        ).exists():
             try:
+                print("TEST2")
                 EmailService.confirm_your_email(user, request)
             except Exception:
                 cache.delete(cache_key)

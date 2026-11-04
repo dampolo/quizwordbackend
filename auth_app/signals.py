@@ -15,13 +15,23 @@ def set_social_login_cookies(sender, request, response, user, **kwargs):
     refresh["auth_provider"] = sociallogin.account.provider
     access = refresh.access_token
 
-    for name, token in (("access_token", access), ("refresh_token", refresh)):
-        response.set_cookie(
-            key=name,
-            value=str(token),
-            httponly=True,
-            secure=settings.AUTH_COOKIE_SECURE,
-            samesite="Lax",
-            path="/",
-            max_age=int(token.lifetime.total_seconds()),
-        )
+    response.set_cookie(
+        key="access_token",
+        value=str(access),
+        httponly=True,
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite="Lax",
+        path="/",
+        max_age=int(access.lifetime.total_seconds()),
+    )
+
+
+    response.set_cookie(
+        key="refresh_token",
+        value=str(refresh),
+        httponly=True,
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite="Lax",
+        path="/",
+        max_age=int(refresh.lifetime.total_seconds()),
+    )
