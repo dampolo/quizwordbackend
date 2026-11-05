@@ -24,6 +24,16 @@ class RegistrationSerializer(serializers.ModelSerializer):
             }
         }
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Diese E-Mail-Adresse wird bereits verwendet.",
+            )
+
+        return value
+
     def get_help_text(self, obj):
         return CustomPasswordValidator().get_help_text()
 
@@ -33,7 +43,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.messages)
         return value
-    
+
     def validate(self, attrs):
         if attrs["password"] != attrs["repeated_password"]:
             raise serializers.ValidationError({
@@ -121,4 +131,3 @@ class ChangeEmailSerializer(serializers.Serializer):
             )
 
         return email
-

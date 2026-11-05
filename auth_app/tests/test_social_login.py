@@ -21,7 +21,8 @@ class SocialLoginTests(SimpleTestCase):
             request=APIRequestFactory().get("/accounts/google/login/callback/"),
             response=response,
             user=user,
-            sociallogin=SimpleNamespace(account=SimpleNamespace(provider="google")),
+            sociallogin=SimpleNamespace(
+                account=SimpleNamespace(provider="google")),
         )
 
         for name, token_class in (("access_token", AccessToken), ("refresh_token", RefreshToken)):
@@ -33,8 +34,8 @@ class SocialLoginTests(SimpleTestCase):
             self.assertTrue(cookie["httponly"])
             self.assertTrue(cookie["secure"])
             self.assertEqual(cookie["samesite"], "Lax")
-        self.assertEqual(response["Location"], "http://127.0.0.1:5173/my-quiz/")
-
+        self.assertEqual(response["Location"],
+                         "http://127.0.0.1:5173/my-quiz/")
 
     def test_regular_allauth_login_does_not_issue_social_tokens(self):
         response = HttpResponseRedirect("/")
@@ -43,11 +44,24 @@ class SocialLoginTests(SimpleTestCase):
         )
         self.assertNotIn("access_token", response.cookies)
 
+    @patch("auth_app.api.views.EmailAddress.objects.filter")
+    @patch(
+        "auth_app.api.views.UserLanguageStatus.languages_active",
+        return_value=False,
+    )
+    def test_me_accepts_session_authentication_without_token(
+        self, languages_active, email_addresses
+    ):
+        email_addresses.return_value.exists.return_value = False
 
-    @patch("auth_app.api.views.UserLanguageStatus.languages_active", return_value=False)
-    def test_me_accepts_session_authentication_without_token(self, languages_active):
         request = APIRequestFactory().get("/api/me/")
-        force_authenticate(request, user=User(pk=123, username="test"))
+        force_authenticate(
+            request,
+            user=User(pk=123, username="test"),
+        )
+
         response = MeView.as_view()(request)
+
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.data["auth_provider"])
+        self.assertFalse(response.data["is_email_verified"])

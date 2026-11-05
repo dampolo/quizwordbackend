@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from allauth.account.models import EmailAddress
 
 User = get_user_model()
 
@@ -31,7 +32,16 @@ class RegistrationViewTest(APITestCase):
 
         self.assertEqual(user.email, "test@example.com")
 
-        self.assertFalse(user.is_active)
+        self.assertTrue(user.is_active)
+        
+        self.assertTrue(
+            EmailAddress.objects.filter(
+                user=user,
+                email=user.email,
+                verified=False,
+                primary=True,
+            ).exists()
+        )
 
         self.assertTrue(user.check_password("StrongPass123!"))
 
@@ -41,4 +51,5 @@ class RegistrationViewTest(APITestCase):
 
         self.assertEqual(response.data["user_id"], user.pk)
 
-        self.assertEqual(response.data["customer_number"], user.customer_number)
+        self.assertEqual(
+            response.data["customer_number"], user.customer_number)
