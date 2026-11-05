@@ -2,7 +2,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from auth_app.models import User
-from auth_app.validators import CustomPasswordValidator
+from auth_app.validators import CustomPasswordValidator, UsernameValidator
+import re
+import unicodedata
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
@@ -32,10 +34,101 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'customer_number',
                             'email', 'is_active', 'created_at', 'is_superuser']
 
-    def validate_postcode(self, value):
-        if value and not value.isdigit():
+    def validate_first_name(self, value):
+        if not value:
+            return value
+
+        if not any(character.isalpha() for character in value):
             raise serializers.ValidationError(
-                "Post code must contain numbers only.")
+                "Der Vorname muss mindestens einen Buchstaben enthalten."
+            )
+
+        return value
+
+    def validate_last_name(self, value):
+        if not value:
+            return value
+
+        if not any(character.isalpha() for character in value):
+            raise serializers.ValidationError(
+                "Der Nachname muss mindestens einen Buchstaben enthalten."
+            )
+
+        return value
+
+    def validate_city(self, value):
+        if not value:
+            return value
+
+        if not any(character.isalpha() for character in value):
+            raise serializers.ValidationError(
+                "Der Ort muss mindestens einen Buchstaben enthalten."
+            )
+
+        return value
+
+    def validate_street(self, value):
+        if not value:
+            return value
+
+        if not any(character.isalpha() for character in value):
+            raise serializers.ValidationError(
+                "Die Straße muss mindestens einen Buchstaben enthalten."
+            )
+
+        return value
+
+    def validate_street_number(self, value):
+        if not value:
+            return value
+
+        if not any(character.isdecimal() for character in value):
+            raise serializers.ValidationError(
+                "Die Hausnummer muss mindestens eine Ziffer enthalten."
+            )
+
+        return value
+
+    def validate_phone(self, value):
+        if not value:
+            return value
+
+        if not re.fullmatch(r"\+?[0-9 ()-]+", value):
+            raise serializers.ValidationError(
+                "Bitte gib eine Telefonnummer mit Ziffern und "
+                "optional +, Leerzeichen, Klammern oder Bindestrichen ein."
+            )
+
+        digits = re.sub(r"[^0-9]", "", value)
+
+        if not 7 <= len(digits) <= 15:
+            raise serializers.ValidationError(
+                "Die Telefonnummer muss zwischen 7 und 15 Ziffern enthalten."
+            )
+
+        return value
+
+    def validate_postcode(self, value):
+        if not value:
+            return value
+
+        has_letter_or_digit = any(
+            character.isalnum() for character in value
+        )
+
+        has_only_allowed_characters = all(
+            character.isalnum()
+            or unicodedata.category(character).startswith("M")
+            or character in " -"
+            for character in value
+        )
+
+        if not has_letter_or_digit or not has_only_allowed_characters:
+            raise serializers.ValidationError(
+                "Die Postleitzahl darf nur Buchstaben, Ziffern, "
+                "Leerzeichen und Bindestriche enthalten."
+            )
+
         return value
 
     def validate_image(self, value):
@@ -54,25 +147,20 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
         instance = super().update(instance, validated_data)
 
-        if( image_was_provided and old_image and old_image.name != instance.image.name):
+        if (image_was_provided and old_image and old_image.name != instance.image.name):
             old_image.delete(save=False)
 
         return instance
-    
+
+
 class ChangeUsernameSerializer(serializers.Serializer):
     username = serializers.CharField()
 
     def validate_username(self, value):
-        if User.objects.filter(username__iexact=value).exists():
-            raise serializers.ValidationError(
-                "Dieser Benutzername wird bereits verwendet."
-            )
-        if len(value) < 4 or len(value) > 10 or any(character.isspace() for character in value):
-            raise serializers.ValidationError(
-                "Mindestens 4, maximal 10 Zeichen und keine Leerzeichen."
-            )
-
-        return value
+        return UsernameValidator().validate(
+            value,
+            instance=self.context["request"].user,
+        )
 
 
 class DeleteAccountSerializer(serializers.Serializer):
@@ -92,6 +180,7 @@ class DeleteAccountSerializer(serializers.Serializer):
             )
 
         return attrs
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)

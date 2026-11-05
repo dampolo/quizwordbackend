@@ -28,7 +28,8 @@ class ChangeUsernameView(APIView):
 
     def patch(self, request):
         serializer = ChangeUsernameSerializer(
-            data=request.data
+            data=request.data,
+            context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
 
