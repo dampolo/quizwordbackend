@@ -34,8 +34,27 @@ class ChangeUsernameView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user = request.user
+        old_username = user.username
         user.username = serializer.validated_data['username']
         user.save(update_fields=['username'])
+
+        html_content = render_to_string(
+            'templates/change_your_username.html',
+            {
+                'old_username': old_username,
+                'new_username': user.username,
+            },
+        )
+
+        email_message = EmailMessage(
+            subject='Dein Username wurde geändert',
+            body=html_content,
+            from_email=f"Quiz Word <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[user.email],
+        )
+
+        email_message.content_subtype = 'html'
+        email_message.send()
 
         return Response({
             "detail": "Benutzername wurde erfolgreich geändert."
