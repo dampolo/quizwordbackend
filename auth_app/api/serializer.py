@@ -91,7 +91,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         password = attrs.get('password')
 
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             raise serializers.ValidationError(
                 {'detail': 'Ungültige Email oder Passwort.'})
@@ -125,6 +125,8 @@ class ChangeEmailSerializer(serializers.Serializer):
         return password
 
     def validate_new_email(self, email):
+        email = email.strip().lower()
+
         if User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError(
                 "Diese E-Mail-Adresse wird bereits verwendet."

@@ -321,6 +321,7 @@ class VerifyEmailView(APIView):
 class ChangeEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         serializer = ChangeEmailSerializer(
             data=request.data,
@@ -333,11 +334,26 @@ class ChangeEmailView(APIView):
         user.email = serializer.validated_data["new_email"]
         user.save(update_fields=["email"])
 
-        return Response(
-            {"detail": "E-Mail-Adresse wurde erfolgreich geändert."},
-            status=status.HTTP_200_OK
+        EmailAddress.objects.update_or_create(
+            user=user,
+            email=user.email,
+            defaults={
+                "verified": False,
+                "primary": True,
+            },
         )
 
+        EmailService.confirm_your_email(user, request)
+
+        return Response(
+            {
+                "detail": (
+                    "E-Mail-Adresse wurde geändert. "
+                    "Bitte bestätige deine neue E-Mail-Adresse."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class ResendVerificationThrottle(AnonRateThrottle):
     scope = 'resend_verification'

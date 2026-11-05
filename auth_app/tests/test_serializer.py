@@ -2,6 +2,18 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from auth_app.api.serializer import RegistrationSerializer
+from auth_app.api.serializer import (
+    CustomTokenObtainPairSerializer,
+    RegistrationSerializer,
+)
+
+from auth_app.api.serializer import (
+    ChangeEmailSerializer,
+    CustomTokenObtainPairSerializer,
+    RegistrationSerializer,
+)
+from rest_framework import serializers
+from types import SimpleNamespace
 
 User = get_user_model()
 
@@ -113,3 +125,108 @@ class RegistrationSerializerTest(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
+
+    def test_invalid_email_is_rejected(self):
+        serializer = RegistrationSerializer(data={
+            "email": "keine-email",
+            "password": "StrongPass123!",
+            "repeated_password": "StrongPass123!",
+        })
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("email", serializer.errors)
+
+
+class LoginSerializerTest(TestCase):
+    def test_login_email_is_case_insensitive(self):
+        user = User.objects.create_user(
+            username="test@example.com",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True,
+        )
+
+        serializer = CustomTokenObtainPairSerializer(data={
+            "email": "TEST@example.com",
+            "password": "StrongPass123!",
+        })
+
+        self.assertTrue(
+            serializer.is_valid(),
+            serializer.errors,
+        )
+
+        self.assertEqual(serializer.user.pk, user.pk)
+        self.assertIn("access", serializer.validated_data)
+        self.assertIn("refresh", serializer.validated_data)
+
+
+class ChangeEmailSerializerTest(TestCase):
+    def test_new_email_is_normalized(self):
+        serializer = ChangeEmailSerializer()
+
+        result = serializer.fields["new_email"].run_validation(
+            "  NEU@Example.com  "
+        )
+
+        result = serializer.validate_new_email(result)
+
+        self.assertEqual(result, "neu@example.com")
+
+    def test_existing_email_is_rejected(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="existing@example.com",
+            password="StrongPass123!",
+        )
+
+        serializer = ChangeEmailSerializer()
+
+        with self.assertRaises(serializers.ValidationError):
+            serializer.validate_new_email("EXISTING@example.com")
+
+    def test_wrong_password_is_rejected(self):
+        user = User.objects.create_user(
+            username="test-user",
+            email="test@example.com",
+            password="StrongPass123!",
+        )
+
+        serializer = ChangeEmailSerializer(
+            data={
+                "password": "WrongPassword123!",
+                "new_email": "neu@example.com",
+            },
+            context={
+                "request": SimpleNamespace(user=user),
+            },
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
+
+    def test_valid_email_change_is_accepted(self):
+        user = User.objects.create_user(
+            username="test-user",
+            email="test@example.com",
+            password="StrongPass123!",
+        )
+
+        serializer = ChangeEmailSerializer(
+            data={
+                "password": "StrongPass123!",
+                "new_email": "  NEU@Example.com  ",
+            },
+            context={
+                "request": SimpleNamespace(user=user),
+            },
+        )
+
+        self.assertTrue(
+            serializer.is_valid(),
+            serializer.errors,
+        )
+        self.assertEqual(
+            serializer.validated_data["new_email"],
+            "neu@example.com",
+        )
