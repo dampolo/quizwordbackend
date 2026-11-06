@@ -91,6 +91,8 @@
           <span>BLZ: {{ invoice.company_swift_code }}</span>
           <span>Bankverbindung: {{ invoice.company_bank_account }}, USt-Idnr: {{ invoice.company_tax_number }}</span>
         </footer>
+
+        {% include "templates/partials/footer.html" %}
       </div>
     </section>
   </body>
