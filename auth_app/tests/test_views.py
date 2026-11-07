@@ -99,3 +99,31 @@ class RegistrationViewTest(APITestCase):
             response.data["repeated_password"][0],
             "Passwörter stimmen nicht überein.",
         )
+
+    def test_registration_with_duplicate_email_is_rejected(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+        )
+        
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+            "repeated_password": "StrongPass123!"
+        }
+
+        response = self.client.post(
+            reverse("create-account"),
+            payload,
+            format="json"
+        )
+
+        matching_users = User.objects.filter(email__iexact=payload["email"])
+
+        self.assertEqual(matching_users.count(), 1)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
