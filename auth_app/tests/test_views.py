@@ -106,7 +106,7 @@ class RegistrationViewTest(APITestCase):
             email="test@example.com",
             password="StrongPass123!",
         )
-        
+
         payload = {
             "email": "test@example.com",
             "password": "StrongPass123!",
@@ -127,3 +127,53 @@ class RegistrationViewTest(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST
         )
+
+    def test_registration_normalizes_email(self):
+        payload = {
+            "email": "TEST@Example.com",
+            "password": "StrongPass123!",
+            "repeated_password": "StrongPass123!"
+        }
+
+        response = self.client.post(
+            reverse("create-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        self.assertEqual(response.data["email"], "test@example.com")
+
+        user = User.objects.get(pk=response.data["user_id"])
+
+        self.assertEqual(user.email, "test@example.com")
+
+
+class LoginViewTest(APITestCase):
+    def test_login_sets_auth_cookies(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIn("access_token", response.cookies)
+        self.assertIn("refresh_token", response.cookies)
