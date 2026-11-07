@@ -47,6 +47,21 @@ class RegistrationSerializerTest(TestCase):
             "Passwörter stimmen nicht überein.",
         )
 
+    def test_short_password_is_rejected(self):
+        data = {
+            "email": "test@example.com",
+            "password": "Strong1!",
+            "repeated_password": "Strong1!"
+        }
+
+        serializer = RegistrationSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("password", serializer.errors)
+        self.assertEqual(
+            serializer.errors["password"][0],
+            "Your password must contain at least 10 characters.",
+        )
+
     def test_email_required(self):
         data = {
             "password": "StrongPass123!",
