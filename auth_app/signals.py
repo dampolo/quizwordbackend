@@ -10,9 +10,13 @@ def set_social_login_cookies(sender, request, response, user, **kwargs):
     if sociallogin is None or not user.is_active:
         return
 
+    issue_social_login_cookies(response, user, sociallogin.account.provider)
+
+
+def issue_social_login_cookies(response, user, provider):
     refresh = RefreshToken.for_user(user)
     refresh["role"] = user.role
-    refresh["auth_provider"] = sociallogin.account.provider
+    refresh["auth_provider"] = provider
     access = refresh.access_token
 
     response.set_cookie(
