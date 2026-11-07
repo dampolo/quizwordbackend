@@ -33,7 +33,7 @@ class RegistrationViewTest(APITestCase):
         self.assertEqual(user.email, "test@example.com")
 
         self.assertTrue(user.is_active)
-        
+
         self.assertTrue(
             EmailAddress.objects.filter(
                 user=user,
@@ -53,3 +53,49 @@ class RegistrationViewTest(APITestCase):
 
         self.assertEqual(
             response.data["customer_number"], user.customer_number)
+
+    def test_registration_with_short_password_is_rejected(self):
+        payload = {
+            "email": "test@example.com",
+            "password": "Strong1!",
+            "repeated_password": "Strong1!"
+        }
+
+        response = self.client.post(
+            reverse("create-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.assertFalse(User.objects.filter(
+            email=payload["email"]).exists())
+
+    def test_registration_with_mismatched_passwords_is_rejected(self):
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+            "repeated_password": "DifferentPass123!"
+        }
+
+        response = self.client.post(
+            reverse("create-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.assertFalse(User.objects.filter(
+            email=payload["email"]).exists())
+
+        self.assertIn("repeated_password", response.data)
+
+        self.assertEqual(
+            response.data["repeated_password"][0],
+            "Passwörter stimmen nicht überein.",
+        )
