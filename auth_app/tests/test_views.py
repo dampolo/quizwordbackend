@@ -329,3 +329,37 @@ class LoginViewTest(APITestCase):
         response = self.client.get(reverse("me"))
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refresh_restores_profile_access(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
+
+        del self.client.cookies["access_token"]
+
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        self.client.post(reverse("token_refresh"))
+
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
