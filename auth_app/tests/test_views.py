@@ -4,6 +4,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from allauth.account.models import EmailAddress
 
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+
 User = get_user_model()
 
 
@@ -356,10 +360,51 @@ class LoginViewTest(APITestCase):
 
         profile_response = self.client.get(reverse("me"))
 
-        self.assertEqual(profile_response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(profile_response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
 
         self.client.post(reverse("token_refresh"))
 
         profile_response = self.client.get(reverse("me"))
 
         self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
+
+    def test_refresh_without_refresh_cookie_is_rejected(self):
+
+        refresh_response = self.client.post(reverse("token_refresh"))
+
+        self.assertEqual(refresh_response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
+
+        self.assertNotIn("access_token", refresh_response.cookies)
+
+
+class PasswordResetViewTest(APITestCase):
+    def test_password_reset_saves_new_password(self):
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+
+        payload = {
+            "password": "StrongPass124!",
+            "uid": uid,
+            "token": token,
+
+        }
+
+        response = self.client.post(
+            reverse("reset-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password(payload["password"]))
