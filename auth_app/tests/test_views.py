@@ -178,13 +178,11 @@ class LoginViewTest(APITestCase):
         self.assertIn("access_token", response.cookies)
         self.assertIn("refresh_token", response.cookies)
 
-
         access_cookie = response.cookies["access_token"]
         refresh_token = response.cookies["refresh_token"]
 
         self.assertTrue(access_cookie["httponly"])
         self.assertTrue(refresh_token["httponly"])
-
 
     def test_login_with_wrong_password_is_rejected(self):
         User.objects.create_user(
@@ -233,3 +231,29 @@ class LoginViewTest(APITestCase):
 
         self.assertNotIn("access_token", response.cookies)
         self.assertNotIn("refresh_token", response.cookies)
+
+    def test_logged_in_user_can_get_own_profile(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(profile_response.data["id"], user.pk)
