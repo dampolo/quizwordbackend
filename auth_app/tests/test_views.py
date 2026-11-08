@@ -257,3 +257,75 @@ class LoginViewTest(APITestCase):
 
         self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
         self.assertEqual(profile_response.data["id"], user.pk)
+        self.assertEqual(profile_response.data["username"], user.username)
+
+    def test_anonymous_user_cannot_get_profile(self):
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn("id", profile_response.data)
+
+    def test_profile_shows_verified_email(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+
+        EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=True,
+            primary=True,
+        )
+
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertIs(profile_response.data["is_email_verified"], True)
+        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
+
+    def test_logout_blocks_profile_access(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!",
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+
+        profile_response = self.client.get(reverse("me"))
+
+        self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
+
+        logout_response = self.client.post(
+            reverse("logout"),
+        )
+
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(reverse("me"))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
