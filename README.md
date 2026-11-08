@@ -2,7 +2,9 @@
 
 Django backend for the Quizword web and mobile apps. The frontend runs separately.
 
-## Prerequisites
+You can [run the backend with Docker Compose](#run-with-docker-compose) or follow the local Python setup below.
+
+## Prerequisites for local Python setup
 
 - Python 3.13 (used by this project's Dockerfile).
 - A running PostgreSQL server (the Docker configuration uses PostgreSQL 17).
@@ -150,6 +152,41 @@ Press `Ctrl+C`. To leave the virtual environment:
 
 ```sh
 deactivate
+```
+
+## Run with Docker Compose
+
+Install and start Docker Desktop on Windows. Run these commands from the project directory. Docker builds the Python environment and starts PostgreSQL for you.
+
+Create `.env` using the example in step 4. Change `DB_HOST` to `db` so Django connects to the PostgreSQL container. Add the `POSTGRES_*` variables and match them to the corresponding `DB_*` values in the same file.
+
+```dotenv
+DB_HOST=db
+DB_PORT=5432
+POSTGRES_DB=quizword
+POSTGRES_USER=quizword
+POSTGRES_PASSWORD=replace-with-your-local-password
+```
+
+Start PostgreSQL and check that it accepts connections. Repeat the second command until it reports `accepting connections`.
+
+```sh
+docker compose -f docker-compose.dev.yml up -d db
+docker compose -f docker-compose.dev.yml exec db pg_isready -h 127.0.0.1
+```
+
+Build the backend, apply migrations, and start the development server.
+
+```sh
+docker compose -f docker-compose.dev.yml build backend
+docker compose -f docker-compose.dev.yml run --rm backend python manage.py migrate
+docker compose -f docker-compose.dev.yml up backend
+```
+
+The backend is available at `http://127.0.0.1:8000/`. For a physical phone, follow the network and `ALLOWED_HOSTS` steps in step 7. After pressing `Ctrl+C`, stop the Compose services with the following command. PostgreSQL data persists in the Compose volume.
+
+```sh
+docker compose -f docker-compose.dev.yml down
 ```
 
 ## Update the dependency list
