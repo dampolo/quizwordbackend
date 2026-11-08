@@ -421,7 +421,6 @@ class PasswordResetViewTest(APITestCase):
         )
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = PasswordResetTokenGenerator().make_token(user)
 
         payload = {
             "password": "StrongPass124!",
