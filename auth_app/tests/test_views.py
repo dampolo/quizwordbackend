@@ -408,3 +408,33 @@ class PasswordResetViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user.refresh_from_db()
         self.assertTrue(user.check_password(payload["password"]))
+
+    def test_password_reset_with_invalid_token_is_rejected(self):
+
+        old_password = "StrongPass123!"
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password=old_password,
+            is_active=True
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+
+        payload = {
+            "password": "StrongPass124!",
+            "uid": uid,
+            "token": "invalid-token",
+        }
+
+        response = self.client.post(
+            reverse("reset-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password(old_password))
