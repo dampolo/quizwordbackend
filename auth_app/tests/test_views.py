@@ -552,5 +552,92 @@ class PasswordResetViewTest(APITestCase):
             format="json"
         )
 
-        self.assertEqual(known_response.status_code, unknown_response.status_code)
+        self.assertEqual(known_response.status_code,
+                         unknown_response.status_code)
         self.assertEqual(known_response.data, unknown_response.data)
+
+    def test_verify_email_marks_address_as_verified(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        email_address = EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=False,
+            primary=True,
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+
+        response = self.client.get(
+            reverse("verify-email", kwargs={"uidb64": uid, "token": token}),
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        email_address.refresh_from_db()
+        self.assertTrue(email_address.verified)
+
+    def test_verify_email_with_invalid_token_keeps_address_unverified(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        email_address = EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=False,
+            primary=True,
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        response = self.client.get(
+            reverse("verify-email",
+                    kwargs={"uidb64": uid, "token": "invalid-token"}),
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        email_address.refresh_from_db()
+        self.assertFalse(email_address.verified)
+
+    def test_change_email_saves_new_address_as_unverified(self):
+        password = "StrongPass123!"
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password=password,
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "password": password,
+            "new_email": "newemail@example.com"
+        }
+
+        response = self.client.post(
+            reverse("change-email"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user.refresh_from_db()
+        self.assertEqual(user.email, payload["new_email"])
+        email_address = EmailAddress.objects.get(
+            user=user,
+            email=payload["new_email"],
+        )
+        self.assertFalse(email_address.verified)
