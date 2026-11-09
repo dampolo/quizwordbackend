@@ -197,7 +197,7 @@ class ForgotPasswordView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return Response({'message': 'If the email exists, a reset link was sent.'})
+            return Response({'message': 'If the email exists, a reset link was sent.'}, status=status.HTTP_200_OK)
 
         token = PasswordResetTokenGenerator().make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -221,7 +221,7 @@ class ForgotPasswordView(APIView):
         email_message.content_subtype = 'html'
         email_message.send()
 
-        return Response({'message': 'Reset link sent'})
+        return Response({'message': 'Reset link sent'}, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(APIView):
@@ -354,6 +354,7 @@ class ChangeEmailView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
 
 class ResendVerificationThrottle(AnonRateThrottle):
     scope = 'resend_verification'

@@ -7,6 +7,7 @@ from allauth.account.models import EmailAddress
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.core import mail
 
 User = get_user_model()
 
@@ -437,3 +438,88 @@ class PasswordResetViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         user.refresh_from_db()
         self.assertTrue(user.check_password(old_password))
+
+    def test_password_reset_token_cannot_be_reused(self):
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+
+        first_new_password = "StrongPass124!"
+
+        payload = {
+            "password": first_new_password,
+            "uid": uid,
+            "token": token,
+        }
+
+        response = self.client.post(
+            reverse("reset-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        payload = {
+            "password": "StrongPass125!",
+            "uid": uid,
+            "token": token,
+        }
+
+        response = self.client.post(
+            reverse("reset-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password(first_new_password))
+
+    def test_forgot_password_sends_reset_email(self):
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+        }
+
+        response = self.client.post(
+            reverse("forgot-password"),
+            payload,
+            format="json"
+        )
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+        self.assertIn(f"reset-password/{uid}/", mail.outbox[0].body)
+
+    def test_forgot_password_does_not_send_email_for_unknown_address(self):
+        payload = {
+            "email": "unknown@example.com",
+        }
+
+        response = self.client.post(
+            reverse("forgot-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
