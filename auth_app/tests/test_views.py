@@ -633,6 +633,8 @@ class PasswordResetViewTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
 
         user.refresh_from_db()
         self.assertEqual(user.email, payload["new_email"])
@@ -641,3 +643,95 @@ class PasswordResetViewTest(APITestCase):
             email=payload["new_email"],
         )
         self.assertFalse(email_address.verified)
+
+    def test_change_email_with_wrong_password_keeps_old_address(self):
+        old_email = "test@example.com"
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "password": "WrongPass123!",
+            "new_email": "newemail@example.com"
+        }
+
+        response = self.client.post(
+            reverse("change-email"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        user.refresh_from_db()
+        self.assertEqual(user.email, old_email)
+
+    def test_change_email_requires_authentication(self):
+        password = "StrongPass123!"
+        old_email = "test@example.com"
+
+        user = User.objects.create_user(
+            username="existing-user",
+            email=old_email,
+            password=password,
+            is_active=True
+        )
+
+        payload = {
+            "password": password,
+            "new_email": "newemail@example.com"
+        }
+
+        response = self.client.post(
+            reverse("change-email"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        user.refresh_from_db()
+        self.assertEqual(user.email, old_email)
+
+    def test_change_email_rejects_address_used_by_another_user(self):
+        user1_email = "test1@example.com"
+
+        user1 = User.objects.create_user(
+            username="existing-user1",
+            email=user1_email,
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        password = "StrongPass1234!"
+        old_email2 = "test2@example.com"
+
+        user2 = User.objects.create_user(
+            username="existing-user2",
+            email=old_email2,
+            password=password,
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user2)
+
+        payload = {
+            "password": password,
+            "new_email": user1_email
+        }
+
+        response = self.client.post(
+            reverse("change-email"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        user1.refresh_from_db()
+        self.assertEqual(user1.email, user1_email)
+        user2.refresh_from_db()
+        self.assertEqual(user2.email, old_email2)
