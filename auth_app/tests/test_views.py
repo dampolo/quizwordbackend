@@ -735,3 +735,140 @@ class PasswordResetViewTest(APITestCase):
         self.assertEqual(user1.email, user1_email)
         user2.refresh_from_db()
         self.assertEqual(user2.email, old_email2)
+
+    def test_resend_verification_skips_verified_address(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+        }
+
+        EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=True,
+            primary=True,
+        )
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_resend_verification_sends_email_to_unverified_address(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="resend-unverified@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": user.email,
+        }
+
+        EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=False,
+            primary=True,
+        )
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+    def test_resend_verification_sends_only_one_email_during_cooldown(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="resend-cooldown@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": user.email,
+        }
+
+        EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=False,
+            primary=True,
+        )
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+    def test_resend_verification_returns_same_response_for_known_and_unknown_email(self):
+        user = User.objects.create_user(
+            username="existing-user",
+            email="resend-email@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload1 = {
+            "email": user.email,
+        }
+
+        payload2 = {
+            "email": "resend-unknown_email@example.com",
+        }
+
+        EmailAddress.objects.create(
+            user=user,
+            email=user.email,
+            verified=False,
+            primary=True,
+        )
+
+        known_response = self.client.post(
+            reverse("resend-verification"),
+            payload1,
+            format="json"
+        )
+
+        unknown_response = self.client.post(
+            reverse("resend-verification"),
+            payload2,
+            format="json"
+        )
+
+        print("TEST: ", unknown_response, known_response)
+
+        self.assertEqual(known_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(unknown_response.status_code, known_response.status_code)
+        self.assertEqual(unknown_response.data, known_response.data)

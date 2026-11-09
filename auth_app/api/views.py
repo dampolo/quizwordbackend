@@ -231,7 +231,6 @@ class ResetPasswordView(APIView):
         uid = request.data.get('uid')
         token = request.data.get('token')
         password = request.data.get('password')
-        print('test')
         try:
             user_id = force_str(urlsafe_base64_decode(uid))
             user = User.objects.get(pk=user_id)
@@ -382,7 +381,6 @@ class ResendVerificationView(APIView):
 
         user = User.objects.filter(
             email__iexact=email, is_active=True).first()
-        print("TEST1")
 
         if user is not None and not EmailAddress.objects.filter(
             user=user,
@@ -390,7 +388,6 @@ class ResendVerificationView(APIView):
             verified=True,
         ).exists():
             try:
-                print("TEST2")
                 EmailService.confirm_your_email(user, request)
             except Exception:
                 cache.delete(cache_key)
