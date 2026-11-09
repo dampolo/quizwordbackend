@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from django.test import SimpleTestCase, APITestCase
+from django.test import SimpleTestCase
 
 from auth_app.validators import CustomPasswordValidator
 
