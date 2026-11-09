@@ -1,15 +1,14 @@
+from django.conf import settings
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.conf import settings
-from django.utils import timezone
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
 
 from .serializer import (ChangePasswordSerializer, ChangeUsernameSerializer,
-                         CustomerProfileSerializer,
-                         DeleteAccountSerializer)
+                         CustomerProfileSerializer, DeleteAccountSerializer)
 
 
 # This method show the whole profile from Customer

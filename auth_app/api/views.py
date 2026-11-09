@@ -1,6 +1,7 @@
 from datetime import timedelta
 from hashlib import sha256
 
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -31,7 +32,6 @@ from auth_app.user_language_status import UserLanguageStatus
 from .serializer import (ChangeEmailSerializer,
                          CustomTokenObtainPairSerializer,
                          RegistrationSerializer)
-from allauth.account.models import EmailAddress
 
 
 class RegistrationView(APIView):

@@ -2,11 +2,13 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from allauth.account.signals import user_logged_in
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.test import SimpleTestCase, override_settings
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
+from auth_app.api.google_login import GoogleTokenLoginView
 from auth_app.api.views import MeView
 from auth_app.models import User
 
@@ -65,3 +67,29 @@ class SocialLoginTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.data["auth_provider"])
         self.assertFalse(response.data["is_email_verified"])
+
+
+    @patch("auth_app.api.google_login.get_adapter")
+    def test_google_login_rejects_invalid_token_without_setting_cookies(self, mock_get_adapter):
+        mock_adapter = mock_get_adapter.return_value
+        mock_provider = mock_adapter.get_provider.return_value
+        mock_provider.verify_token.side_effect = ValidationError(
+            "Ungültiger Token")
+
+        payload = {
+            "id_token": "unvalid-test-token"
+        }
+
+        request = APIRequestFactory().post(
+            "/api/token/google/",
+            payload,
+            format="json",
+        )
+
+        response = GoogleTokenLoginView.as_view()(request)
+
+        self.assertEqual(response.status_code, 401)
+
+        self.assertNotIn("access_token", response.cookies)
+        self.assertNotIn("refresh_token", response.cookies)
+        mock_provider.verify_token.assert_called_once()

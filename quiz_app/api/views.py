@@ -11,8 +11,8 @@ from quiz_app.api.serializer import (GetQuizSerializer,
                                      QuizAttemptListSerializer, QuizSerializer,
                                      UpdateQuizSerializer)
 from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
-from vocabulary_app.models import VocabularyConcept, VocabularyWord
 from vocabulary_app.api.serializer import VocabularyConceptSerializer
+from vocabulary_app.models import VocabularyConcept, VocabularyWord
 
 
 # Use can see all his quizes

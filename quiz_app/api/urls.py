@@ -1,9 +1,9 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (CreateRandomQuizView, LastQuizView, QuizAttemptViewSet, QuizSubmitAPIView,
-                    QuizViewSet, LastFlipcardQuizView, RandomFlipcardQuizView,
-                    RandomRepeadWords)
+from .views import (CreateRandomQuizView, LastFlipcardQuizView, LastQuizView,
+                    QuizAttemptViewSet, QuizSubmitAPIView, QuizViewSet,
+                    RandomFlipcardQuizView, RandomRepeadWords)
 
 router = DefaultRouter()
 router.register(r'quizzes', QuizViewSet, basename='quiz')

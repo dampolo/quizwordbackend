@@ -1,19 +1,12 @@
+from types import SimpleNamespace
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-
-from auth_app.api.serializer import RegistrationSerializer
-from auth_app.api.serializer import (
-    CustomTokenObtainPairSerializer,
-    RegistrationSerializer,
-)
-
-from auth_app.api.serializer import (
-    ChangeEmailSerializer,
-    CustomTokenObtainPairSerializer,
-    RegistrationSerializer,
-)
 from rest_framework import serializers
-from types import SimpleNamespace
+
+from auth_app.api.serializer import (ChangeEmailSerializer,
+                                     CustomTokenObtainPairSerializer,
+                                     RegistrationSerializer)
 
 User = get_user_model()
 

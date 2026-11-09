@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from .views import (LanguageViewSet, UserLanguageViewSet,
                     VocabularyCategoryViewSet, VocabularyConceptViewSet,
-                    VocabularyWordViewSet, VocabularySearchView)
+                    VocabularySearchView, VocabularyWordViewSet)
 
 router = DefaultRouter()
 router.register(

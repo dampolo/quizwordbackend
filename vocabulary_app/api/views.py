@@ -8,17 +8,16 @@ from rest_framework.validators import ValidationError
 
 from auth_app.user_language_status import UserLanguageStatus
 from vocabulary_app import pagination
-from vocabulary_app.api.serializer import (LanguageSerializer,
+from vocabulary_app.api.serializer import (GetCategorySerializer,
+                                           LanguageSerializer,
+                                           UpdateCategorySerializer,
                                            UserLanguageSerializer,
                                            VocabularyCategorySerializer,
                                            VocabularyConceptSerializer,
                                            VocabularyConceptUpdateSerializer,
                                            VocabularyEntryCreateSerializer,
                                            VocabularySearchSerializer,
-                                           VocabularyWordSerializer,
-                                           UpdateCategorySerializer,
-                                           GetCategorySerializer
-                                           )
+                                           VocabularyWordSerializer)
 from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
                                    VocabularyConcept, VocabularyWord)
 

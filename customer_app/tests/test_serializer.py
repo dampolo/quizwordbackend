@@ -1,12 +1,12 @@
-from django.test import SimpleTestCase
-from customer_app.api.serializer import CustomerProfileSerializer
-from types import SimpleNamespace
-from rest_framework import serializers
-
 from io import BytesIO
+from types import SimpleNamespace
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import SimpleTestCase
 from PIL import Image
+from rest_framework import serializers
+
+from customer_app.api.serializer import CustomerProfileSerializer
 
 
 class CustomerProfileSerializerTest(SimpleTestCase):

@@ -1,13 +1,14 @@
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
-from allauth.account.models import EmailAddress
+from unittest.mock import patch
 
+from allauth.account.models import EmailAddress
+from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core import mail
+from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from django.core import mail
+from rest_framework import status
+from rest_framework.test import APITestCase
 
 User = get_user_model()
 
@@ -379,7 +380,7 @@ class LoginViewTest(APITestCase):
 
         self.assertNotIn("access_token", refresh_response.cookies)
 
-
+@patch("auth_app.api.views.ResendVerificationView.throttle_classes", [])
 class PasswordResetViewTest(APITestCase):
     def test_password_reset_saves_new_password(self):
 
@@ -739,13 +740,13 @@ class PasswordResetViewTest(APITestCase):
     def test_resend_verification_skips_verified_address(self):
         user = User.objects.create_user(
             username="existing-user",
-            email="test@example.com",
+            email="test2@example.com",
             password="StrongPass123!",
             is_active=True
         )
 
         payload = {
-            "email": "test@example.com",
+            "email": "test2@example.com",
         }
 
         EmailAddress.objects.create(
