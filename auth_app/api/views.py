@@ -221,7 +221,7 @@ class ForgotPasswordView(APIView):
         email_message.content_subtype = 'html'
         email_message.send()
 
-        return Response({'message': 'Reset link sent'}, status=status.HTTP_200_OK)
+        return Response({'message': 'If the email exists, a reset link was sent.'}, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(APIView):

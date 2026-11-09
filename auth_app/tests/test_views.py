@@ -523,3 +523,34 @@ class PasswordResetViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_forgot_password_returns_same_response_for_known_and_unknown_email(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+        }
+
+        known_response = self.client.post(
+            reverse("forgot-password"),
+            payload,
+            format="json"
+        )
+
+        payload = {
+            "email": "unknown@example.com",
+        }
+
+        unknown_response = self.client.post(
+            reverse("forgot-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(known_response.status_code, unknown_response.status_code)
+        self.assertEqual(known_response.data, unknown_response.data)
