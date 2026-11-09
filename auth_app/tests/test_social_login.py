@@ -68,7 +68,6 @@ class SocialLoginTests(SimpleTestCase):
         self.assertIsNone(response.data["auth_provider"])
         self.assertFalse(response.data["is_email_verified"])
 
-
     @patch("auth_app.api.google_login.get_adapter")
     def test_google_login_rejects_invalid_token_without_setting_cookies(self, mock_get_adapter):
         mock_adapter = mock_get_adapter.return_value
@@ -93,3 +92,65 @@ class SocialLoginTests(SimpleTestCase):
         self.assertNotIn("access_token", response.cookies)
         self.assertNotIn("refresh_token", response.cookies)
         mock_provider.verify_token.assert_called_once()
+
+    def test_google_login_rejects_missing_id_token(self):
+        request = APIRequestFactory().post(
+            "/api/token/google/",
+            {},
+            format="json",
+        )
+
+        response = GoogleTokenLoginView.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+        print("Profile: ", response.data)
+        self.assertIn("id_token", response.data)
+
+    @patch("auth_app.api.google_login.get_adapter")
+    def test_google_login_rejects_unlinked_account(self, mock_get_adapter):
+        mock_adapter = mock_get_adapter.return_value
+        mock_provider = mock_adapter.get_provider.return_value
+        mock_provider.verify_token.return_value = SimpleNamespace(
+            account=SimpleNamespace(
+                uid="google-test-user",
+                extra_data={"sub": "google-test-user", "exp": 2_000_000_000},
+            ),
+        )
+        with patch("auth_app.api.google_login.SocialAccount.objects.select_related") as mock_select_related:
+            mock_select_related.return_value.filter.return_value.first.return_value = None
+
+            request = APIRequestFactory().post(
+                "/api/token/google/",
+                {"id_token": "test-token"},
+                format="json",
+            )
+
+            response = GoogleTokenLoginView.as_view()(request)
+            self.assertEqual(response.status_code, 403)
+
+    @patch("auth_app.api.google_login.get_adapter")
+    def test_google_login_sets_cookies_for_linked_account(self, mock_get_adapter):
+        mock_adapter = mock_get_adapter.return_value
+        mock_provider = mock_adapter.get_provider.return_value
+        mock_provider.verify_token.return_value = SimpleNamespace(
+            account=SimpleNamespace(
+                uid="google-test-user",
+                extra_data={"sub": "google-test-user", "exp": 2_000_000_000},
+            ),
+        )
+
+        user = User(pk=123, username="test", email="test@example.com")
+        linked_account = SimpleNamespace(user=user, provider="google")
+
+        with patch("auth_app.api.google_login.SocialAccount.objects.select_related") as mock_select_related:
+            mock_select_related.return_value.filter.return_value.first.return_value = linked_account
+
+            request = APIRequestFactory().post(
+                "/api/token/google/",
+                {"id_token": "test-token"},
+                format="json",
+            )
+            
+            response = GoogleTokenLoginView.as_view()(request)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("access_token", response.cookies)
+            self.assertIn("refresh_token", response.cookies)
