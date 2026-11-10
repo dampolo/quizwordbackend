@@ -4,12 +4,13 @@ from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
+from django.core.cache import cache
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.core.cache import cache
+
 User = get_user_model()
 
 

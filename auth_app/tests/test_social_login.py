@@ -4,7 +4,7 @@ from unittest.mock import patch
 from allauth.account.signals import user_logged_in
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
-from django.test import SimpleTestCase, override_settings
+from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
@@ -13,10 +13,14 @@ from auth_app.api.views import MeView
 from auth_app.models import User
 
 
-class SocialLoginTests(SimpleTestCase):
+class SocialLoginTests(TestCase):
     @override_settings(AUTH_COOKIE_SECURE=True)
     def test_completed_google_login_sets_jwt_cookies_on_redirect(self):
-        user = User(pk=123, username="test", email="test@example.com")
+        user = User.objects.create_user(
+            username="test",
+            email="test@example.com",
+            is_active=True,
+        )
         response = HttpResponseRedirect("http://127.0.0.1:5173/my-quiz/")
         user_logged_in.send(
             sender=User,
@@ -138,7 +142,11 @@ class SocialLoginTests(SimpleTestCase):
             ),
         )
 
-        user = User(pk=123, username="test", email="test@example.com")
+        user = User.objects.create_user(
+            username="test",
+            email="test@example.com",
+            is_active=True,
+        )
         linked_account = SimpleNamespace(user=user, provider="google")
 
         with patch("auth_app.api.google_login.SocialAccount.objects.select_related") as mock_select_related:
