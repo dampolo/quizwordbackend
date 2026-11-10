@@ -392,6 +392,37 @@ class LoginViewTest(APITestCase):
         self.assertEqual(
             refresh_response.cookies["refresh_token"]["max-age"], 0)
 
+    def test_refresh_rejects_reused_refresh_token(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "email": "test@example.com",
+            "password": "StrongPass123!"
+        }
+
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        old_refresh_token = self.client.cookies["refresh_token"].value
+
+        refresh_response = self.client.post(reverse("token_refresh"))
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+
+        self.client.cookies["refresh_token"] = old_refresh_token
+
+        reused_refresh_response = self.client.post(reverse("token_refresh"))
+        self.assertEqual(reused_refresh_response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
+
 
 @patch("auth_app.api.views.ResendVerificationView.throttle_classes", [])
 class PasswordResetViewTest(APITestCase):
@@ -895,7 +926,7 @@ class ResendVerificationThrottleTest(APITestCase):
         self.addCleanup(cache.clear)
 
         payload = {"email": "resend-email@example.com"}
-    
+
         for _ in range(5):
             response = self.client.post(
                 reverse("resend-verification"),
@@ -910,4 +941,30 @@ class ResendVerificationThrottleTest(APITestCase):
             format="json"
         )
 
-        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(response.status_code,
+                         status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_resend_verification_throttles_same_ip_across_email_addresses(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        payload = {"email": "resend-email@example.com"}
+
+        for _ in range(5):
+            response = self.client.post(
+                reverse("resend-verification"),
+                payload,
+                format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        payload = {"email": "resend-other-email@example.com"}
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_429_TOO_MANY_REQUESTS)

@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'django_filters',
     'auth_app',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'vocabulary_app',
     'quiz_app',
     'customer_app',
