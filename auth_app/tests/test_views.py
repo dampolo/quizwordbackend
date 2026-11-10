@@ -9,7 +9,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
 from rest_framework.test import APITestCase
-
+from django.core.cache import cache
 User = get_user_model()
 
 
@@ -379,6 +379,19 @@ class LoginViewTest(APITestCase):
                          status.HTTP_401_UNAUTHORIZED)
 
         self.assertNotIn("access_token", refresh_response.cookies)
+
+    def test_refresh_with_invalid_refresh_cookie_is_rejected(self):
+        self.client.cookies["refresh_token"] = "invalid-token"
+
+        refresh_response = self.client.post(reverse("token_refresh"))
+
+        self.assertEqual(refresh_response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            refresh_response.cookies["access_token"]["max-age"], 0)
+        self.assertEqual(
+            refresh_response.cookies["refresh_token"]["max-age"], 0)
+
 
 @patch("auth_app.api.views.ResendVerificationView.throttle_classes", [])
 class PasswordResetViewTest(APITestCase):
@@ -871,5 +884,30 @@ class PasswordResetViewTest(APITestCase):
         print("TEST: ", unknown_response, known_response)
 
         self.assertEqual(known_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(unknown_response.status_code, known_response.status_code)
+        self.assertEqual(unknown_response.status_code,
+                         known_response.status_code)
         self.assertEqual(unknown_response.data, known_response.data)
+
+
+class ResendVerificationThrottleTest(APITestCase):
+    def test_resend_verification_returns_429_after_five_requests(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        payload = {"email": "resend-email@example.com"}
+    
+        for _ in range(5):
+            response = self.client.post(
+                reverse("resend-verification"),
+                payload,
+                format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(
+            reverse("resend-verification"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
