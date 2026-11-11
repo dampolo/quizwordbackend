@@ -180,6 +180,8 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
             native_language,
         )
 
+        target_language_id = translations[1]["language"].pk
+
         native_word = native_item["word"].strip()
 
         existing_concepts = self._get_existing_concepts(
@@ -203,6 +205,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                 native_word,
                 allow_new_meaning,
                 user,
+                target_language_id,
             )
 
             if self.requires_confirmation or self.info_messages:
@@ -280,6 +283,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
             native_word,
             allow_new_meaning,
             user,
+            target_language_id
     ):
 
         # Get all translations except the native language
@@ -333,8 +337,8 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                     "language": translation.language.language_name,
                     "word": translation.word,
                 }
-                for translation in existing_concept.translations.all()
-                if translation.language != native_language
+                for translation in existing_concept.translations.filter(
+                language_id=target_language_id,)
             ]
 
             self.confirmation_data = {
