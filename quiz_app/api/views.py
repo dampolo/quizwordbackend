@@ -164,7 +164,7 @@ class UpdateRank:
                 word.source_rank += 1
             else:
                 word.source_rank -= 1
-            word.save(update_fields=["rank"])
+            word.save(update_fields=["source_rank"])
 
 
 class LastQuizView(APIView):
