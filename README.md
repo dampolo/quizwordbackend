@@ -198,3 +198,5 @@ python -m pip freeze > requirements.txt
 ```
 
 Review the changes before committing `requirements.txt`. This command overwrites the file with everything installed in the active environment. It is not a startup step: when setting up the project, use `python -m pip install -r requirements.txt` instead.
+
+* Ask Damian for credentials.
