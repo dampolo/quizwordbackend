@@ -5,8 +5,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
 from PIL import Image
 from rest_framework import serializers
+from auth_app.models import User
+from rest_framework import status, response
 
-from customer_app.api.serializer import CustomerProfileSerializer
+from customer_app.api.serializer import CustomerProfileSerializer, ChangePasswordSerializer
 
 
 class CustomerProfileSerializerTest(SimpleTestCase):
@@ -260,3 +262,23 @@ class CustomerProfileSerializerTest(SimpleTestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("image", serializer.errors)
+
+
+class ChangePasswordSerializerTest(SimpleTestCase):
+    def test_wrong_old_password_is_rejected(self):
+        user = User()
+        user.set_password("CurrentPass123!")
+
+        request = SimpleNamespace(user=user)
+        serializer = ChangePasswordSerializer(
+
+            data={
+                "old_password": "WrongPass123!",
+                "new_password": "NewPassword123!",
+                "repeated_new_password": "NewPassword123!",
+            },
+            context={"request": request}
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("old_password", serializer.errors)
