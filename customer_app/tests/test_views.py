@@ -2,6 +2,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
+from django.core import mail
 User = get_user_model()
 
 
@@ -85,3 +86,67 @@ class ChangePasswordViewTest(APITestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_401_UNAUTHORIZED, response.data)
 
+
+class ChangeUsernameViewTest(APITestCase):
+    def test_change_username_saves_new_username_and_sends_email(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "username": "newname"
+        }
+
+        response = self.client.patch(
+            reverse("change-username"),
+            payload,
+            format="json"
+        )
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK, response.data)
+
+        user.refresh_from_db()
+
+        self.assertEqual(user.username, payload["username"])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+    def test_duplicate_username_is_rejected_without_sending_email(self):
+        user1 = User.objects.create_user(
+            username="oldname",
+            email="test@example1.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        user2 = User.objects.create_user(
+            username="newname",
+            email="test@example2.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user1)
+
+        payload = {
+            "username": "NewName"
+        }
+
+        response = self.client.patch(
+            reverse("change-username"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_400_BAD_REQUEST, response.data)
+
+        user1.refresh_from_db()
+
+        self.assertEqual(user1.username, "oldname")
+        self.assertEqual(len(mail.outbox), 0)
