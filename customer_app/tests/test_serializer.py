@@ -282,3 +282,22 @@ class ChangePasswordSerializerTest(SimpleTestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("old_password", serializer.errors)
+
+    def test_mismatched_new_passwords_are_rejected(self):
+        user = User()
+        user.set_password("CurrentPass123!")
+
+        request = SimpleNamespace(user=user)
+
+        serializer = ChangePasswordSerializer(
+
+            data={
+                "old_password": "CurrentPass123!",
+                "new_password": "NewPassword123!",
+                "repeated_new_password": "NewPassword123?",
+            },
+            context={"request": request}
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("repeated_new_password", serializer.errors)
