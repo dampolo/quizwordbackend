@@ -287,6 +287,7 @@ class ChangePasswordSerializerTest(SimpleTestCase):
         user = User()
         user.set_password("CurrentPass123!")
 
+        # SimpleNamespace erstellt ein einfaches Python-Objekt, dessen Werte du per Punkt abrufen kannst.
         request = SimpleNamespace(user=user)
 
         serializer = ChangePasswordSerializer(
@@ -301,3 +302,42 @@ class ChangePasswordSerializerTest(SimpleTestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("repeated_new_password", serializer.errors)
+
+    def test_weak_new_password_is_rejected(self):
+        user = User()
+        user.set_password("CurrentPass123!")
+
+        request = SimpleNamespace(user=user)
+
+        serializer = ChangePasswordSerializer(
+            data={
+                "old_password": "CurrentPass123!",
+                "new_password": "NewPassword123",
+                "repeated_new_password": "NewPassword123",
+            },
+            context={"request": request}
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("new_password", serializer.errors)
+
+    def test_valid_password_change_is_accepted(self):
+        user = User()
+        user.set_password("CurrentPass123!")
+
+        request = SimpleNamespace(user=user)
+
+        serializer = ChangePasswordSerializer(
+            data={
+                "old_password": "CurrentPass123!",
+                "new_password": "NewPassword123!",
+                "repeated_new_password": "NewPassword123!",
+            },
+            context={"request": request}
+        )
+
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(
+            serializer.validated_data["new_password"],
+            "NewPassword123!",
+            )
