@@ -338,7 +338,7 @@ class VocabularyEntryCreateSerializer(serializers.Serializer):
                     "word": translation.word,
                 }
                 for translation in existing_concept.translations.filter(
-                language_id=target_language_id,)
+                    language_id=target_language_id,)
             ]
 
             self.confirmation_data = {
@@ -603,7 +603,7 @@ class GetCategorySerializer(serializers.ModelSerializer):
         source="target_language", read_only=True)
     language_id = serializers.IntegerField(
         source="target_language.id", read_only=True)
-    
+
     class Meta:
         model = VocabularyCategory
         fields = (
@@ -648,3 +648,37 @@ class UpdateCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = VocabularyCategory
         fields = ["category_name"]
+
+
+class VocabularyConceptMultipleChoiceSerializer(serializers.ModelSerializer):
+    translations = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VocabularyConcept
+        fields = (
+            "id",
+            "translations",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_translations(self, obj):
+        user_languages = self.context["request"].user.user_languages
+        language = self.context["language"]
+
+        if language is None:
+            return []
+
+        random_word = VocabularyWord.objects.filter(concept__user=self.context["request"].user,
+                                                    language_id=language).exclude(concept_id=obj.pk).order_by("?")[0:2]
+
+        translations = obj.translations.filter(
+            language_id__in=[
+                user_languages.native_language.id,
+                language,
+            ]
+        )
+
+        all_words = [*translations, *random_word]
+
+        return VocabularyWordSerializer(all_words, many=True).data

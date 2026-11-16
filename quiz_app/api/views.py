@@ -11,11 +11,13 @@ from quiz_app.api.serializer import (GetQuizSerializer,
                                      QuizAttemptListSerializer, QuizSerializer,
                                      UpdateQuizSerializer)
 from quiz_app.models import Quiz, QuizAnswer, QuizAttempt
-from vocabulary_app.api.serializer import VocabularyConceptSerializer
+from vocabulary_app.api.serializer import VocabularyConceptSerializer, VocabularyConceptMultipleChoiceSerializer
 from vocabulary_app.models import VocabularyConcept, VocabularyWord
-
+from django.shortcuts import get_object_or_404
 
 # Use can see all his quizes
+
+
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
@@ -332,3 +334,41 @@ class RandomRepeadWords(APIView):
         )
 
         return Response(serializer.data)
+
+
+class MultipleChoiceQuizView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        language_id = request.query_params.get("language")
+        quiz_id = request.query_params.get("quiz")
+
+        word_count = VocabularyWord.objects.filter(
+            concept__user=request.user, language=language_id).count()
+
+        if word_count < 10:
+            return Response (
+                {
+                    "detail": "Du hast leider zu wenig Wörter",
+                }
+            )
+
+        quiz = get_object_or_404(Quiz, pk=quiz_id, user=request.user)
+        concepts = quiz.concepts.all()
+
+        serializer = VocabularyConceptMultipleChoiceSerializer(
+            concepts,
+            many=True,
+            context={
+                "request": request,
+                "language": language_id,
+            }
+        )
+
+        return Response(
+
+            {
+                "quiz_id": quiz_id,
+                "concept_ids": serializer.data,
+            }
+        )

@@ -3,16 +3,18 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (CreateRandomQuizView, LastFlipcardQuizView, LastQuizView,
                     QuizAttemptViewSet, QuizSubmitAPIView, QuizViewSet,
-                    RandomFlipcardQuizView, RandomRepeadWords)
+                    RandomFlipcardQuizView, RandomRepeadWords, MultipleChoiceQuizView)
 
 router = DefaultRouter()
 router.register(r'quizzes', QuizViewSet, basename='quiz')
 router.register(r'attempts', QuizAttemptViewSet, basename='attempt')
 
 urlpatterns = [
-    path('random-repeat-words/', RandomRepeadWords.as_view(), name='random-repeat-words'),
+    path('random-repeat-words/', RandomRepeadWords.as_view(),
+         name='random-repeat-words'),
     path('random-quiz/', CreateRandomQuizView.as_view(), name='create-random-quiz'),
-    path('quiz-answers/<int:quiz_id>/submit/', QuizSubmitAPIView.as_view(), name='quiz-answer'),
+    path('quiz-answers/<int:quiz_id>/submit/',
+         QuizSubmitAPIView.as_view(), name='quiz-answer'),
     path('last-quiz/', LastQuizView.as_view(), name='last-quiz'),
     path(
         "last-flipcard-quiz/",
@@ -20,9 +22,14 @@ urlpatterns = [
         name="last-flipcard-quiz",
     ),
     path(
-            "random-flipcard-quiz/",
-            RandomFlipcardQuizView.as_view(),
-            name="random-flipcard-quiz",
-        ),
+        "random-flipcard-quiz/",
+        RandomFlipcardQuizView.as_view(),
+        name="random-flipcard-quiz",
+    ),
+    path(
+        "multiple-choice-quiz/",
+        MultipleChoiceQuizView.as_view(),
+        name="multiple-choice-quiz",
+    ),
     path('', include(router.urls)),
 ]
