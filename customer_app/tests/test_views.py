@@ -166,3 +166,113 @@ class ChangeUsernameViewTest(APITestCase):
                          status.HTTP_401_UNAUTHORIZED, response.data)
 
         self.assertEqual(len(mail.outbox), 0)
+
+
+class DeleteAccountViewTest(APITestCase):
+    def test_wrong_password_does_not_delete_account(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "password": "WrongPass123!"
+        }
+
+        response = self.client.delete(
+            reverse("delete-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertIn("password", response.data)
+        self.assertEqual(response.status_code,
+                         status.HTTP_400_BAD_REQUEST, response.data)
+        self.assertTrue(User.objects.filter(pk=user.pk).exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_correct_password_deletes_account_and_sends_email(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "password": "StrongPass123!"
+        }
+
+        user_id = user.pk
+
+        response = self.client.delete(
+            reverse("delete-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK)
+        self.assertFalse(User.objects.filter(pk=user_id).exists())
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+
+    def test_superuser_cannot_delete_account_even_with_correct_password(self):
+        user = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="StrongPass123!",
+        )
+        user_id = user.pk
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "password": "StrongPass123!"
+        }
+
+        response = self.client.delete(
+            reverse("delete-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_400_BAD_REQUEST)
+
+        self.assertEqual(
+            response.data["detail"][0],
+            "Ein Superuser-Konto kann nicht gelöscht werden.",
+        )
+
+        self.assertTrue(User.objects.filter(pk=user_id).exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_unauthenticated_user_cannot_delete_account(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True
+        )
+
+        payload = {
+            "password": "StrongPass123!"
+        }
+
+        response = self.client.delete(
+            reverse("delete-account"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_401_UNAUTHORIZED)
+
+        self.assertTrue(User.objects.filter(pk=user.pk).exists())
+        self.assertEqual(len(mail.outbox), 0)
