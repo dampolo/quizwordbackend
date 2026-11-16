@@ -150,3 +150,19 @@ class ChangeUsernameViewTest(APITestCase):
 
         self.assertEqual(user1.username, "oldname")
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_unauthenticated_user_cannot_change_username(self):
+        payload = {
+            "username": "newname"
+        }
+
+        response = self.client.patch(
+            reverse("change-username"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_401_UNAUTHORIZED, response.data)
+
+        self.assertEqual(len(mail.outbox), 0)
