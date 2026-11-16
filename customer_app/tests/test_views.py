@@ -276,3 +276,143 @@ class DeleteAccountViewTest(APITestCase):
 
         self.assertTrue(User.objects.filter(pk=user.pk).exists())
         self.assertEqual(len(mail.outbox), 0)
+
+
+class CustomerProfileViewTest(APITestCase):
+    def test_authenticated_user_can_update_subscription(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=False
+        )
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "has_subscription": True
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK)
+
+        user.refresh_from_db()
+
+        self.assertTrue(user.has_subscription)
+
+    def test_authenticated_user_can_disable_subscription(self):
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=True
+        )
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "has_subscription": False
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK)
+
+        user.refresh_from_db()
+
+        self.assertFalse(user.has_subscription)
+
+    def test_authenticated_user_can_retrieve_own_profile(self):
+        user1 = User.objects.create_user(
+            username="newname1",
+            email="test@example1.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=True
+        )
+
+        user2 = User.objects.create_user(
+            username="newname2",
+            email="test@example2.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=True
+        )
+
+        self.client.force_authenticate(user=user2)
+
+        response = self.client.get(reverse("profile-customer"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], user2.id)
+        self.assertEqual(response.data["email"], user2.email)
+
+        self.client.force_authenticate(user=user1)
+        response = self.client.get(reverse("profile-customer"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], user1.id)
+        self.assertEqual(response.data["email"], user1.email)
+
+    def test_authenticated_user_can_not_retrieve_other_profile(self):
+        user1 = User.objects.create_user(
+            username="newname1",
+            email="test@example1.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=True
+        )
+
+        user2 = User.objects.create_user(
+            username="newname2",
+            email="test@example2.com",
+            password="StrongPass123!",
+            is_active=True,
+            has_subscription=True
+        )
+
+        self.client.force_authenticate(user=user1)
+        response = self.client.get(
+            reverse("profile-customer"),
+            {"id": user2.pk},
+        )
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["id"], user1.pk)
+        self.assertEqual(response.data["email"], user1.email)
+
+    def test_profile_update_ignores_read_only_email(self):
+        user = User.objects.create_user(
+            username="newname",
+            email="original@example.com",
+            password="StrongPass123!",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "email": "test@example.com",
+            "first_name": "Anna"
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertEqual(user.first_name, "Anna")
+        self.assertEqual(user.email, "original@example.com")

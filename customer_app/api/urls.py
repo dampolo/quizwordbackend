@@ -5,7 +5,8 @@ from django.urls import include, path
 from . import views
 
 urlpatterns = [
-    path('profile-customer/', views.CustomerProfileView.as_view()),
+    path('profile-customer/', views.CustomerProfileView.as_view(),
+         name="profile-customer"),
     path(
         "change-username/",
         views.ChangeUsernameView.as_view(),
