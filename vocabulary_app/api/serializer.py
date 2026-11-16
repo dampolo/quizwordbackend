@@ -678,6 +678,7 @@ class VocabularyConceptMultipleChoiceSerializer(serializers.ModelSerializer):
                 language,
             ]
         )
+        print("translations: ", translations)
 
         all_words = [*translations, *random_word]
 

@@ -349,8 +349,8 @@ class MultipleChoiceQuizView(APIView):
         if word_count < 10:
             return Response (
                 {
-                    "detail": "Du hast leider zu wenig Wörter",
-                }
+                    "detail": "Du hast leider zu wenig Wörter"
+                }, status=400
             )
 
         quiz = get_object_or_404(Quiz, pk=quiz_id, user=request.user)
