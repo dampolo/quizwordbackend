@@ -416,3 +416,32 @@ class CustomerProfileViewTest(APITestCase):
         user.refresh_from_db()
         self.assertEqual(user.first_name, "Anna")
         self.assertEqual(user.email, "original@example.com")
+
+    def test_profile_update_rejects_invalid_phone(self):
+        user = User.objects.create_user(
+            username="newname",
+            email="original@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "phone": "abc",
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_400_BAD_REQUEST, response.data)
+
+
+        self.assertIn("phone", response.data)
+
+        user.refresh_from_db()
+        self.assertEqual(user.phone, "+49 170 1234567")
