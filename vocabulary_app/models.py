@@ -128,4 +128,4 @@ class VocabularyWord(models.Model):
         ]
 
     def __str__(self):
-        return self.word
+        return f"{self.word} ({self.language})"
