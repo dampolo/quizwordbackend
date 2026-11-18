@@ -552,15 +552,15 @@ class CustomerProfileViewTest(APITestCase):
         self.assertEqual(user1.first_name, "Maria")
         self.assertEqual(user2.first_name, "Lisa")
 
+    @staticmethod
+    def make_test_image(filename):
+        with BytesIO() as buffer:
+            Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
+            return SimpleUploadedFile(
+                filename, buffer.getvalue(), content_type="image/png"
+            )
+
     def test_profile_update_replaces_image_and_deletes_old_file(self):
-
-        def make_test_image(filename):
-            with BytesIO() as buffer:
-                Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
-                return SimpleUploadedFile(
-                    filename, buffer.getvalue(), content_type="image/png"
-                )
-
         with TemporaryDirectory() as temp_media_root:
             with override_settings(MEDIA_ROOT=temp_media_root):
                 user = User.objects.create_user(
@@ -569,14 +569,14 @@ class CustomerProfileViewTest(APITestCase):
                     password="StrongPass123!",
                     phone="+49 170 1234567",
                     is_active=True,
-                    image=make_test_image("old.png")
+                    image=self.make_test_image("old.png")
                 )
 
                 old_image_name = user.image.name
 
                 self.client.force_authenticate(user=user)
 
-                payload = {"image": make_test_image("new.png")}
+                payload = {"image": self.make_test_image("new.png")}
 
                 response = self.client.patch(
                     reverse("profile-customer"),
@@ -585,7 +585,7 @@ class CustomerProfileViewTest(APITestCase):
 
                 self.assertEqual(response.status_code,
                                  status.HTTP_200_OK)
-                
+
                 user.refresh_from_db()
                 self.assertNotEqual(user.image.name, old_image_name)
                 self.assertTrue(user.image.storage.exists(user.image.name))
@@ -621,9 +621,66 @@ class CustomerProfileViewTest(APITestCase):
                     payload,
                     format="multipart")
 
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
+                self.assertEqual(response.status_code,
+                                 status.HTTP_400_BAD_REQUEST, response.data)
                 self.assertIn("image", response.data)
 
                 user.refresh_from_db()
                 self.assertEqual(user.image.name, old_image_name)
                 self.assertTrue(user.image.storage.exists(old_image_name))
+
+    def test_profile_update_without_image_preserves_existing_image(self):
+        with TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                user = User.objects.create_user(
+                    username="newname",
+                    email="original@example.com",
+                    password="StrongPass123!",
+                    first_name="Anna",
+                    image=self.make_test_image("old.png"),
+                )
+                old_image_name = user.image.name
+                self.assertTrue(user.image.storage.exists(old_image_name))
+                self.client.force_authenticate(user=user)
+
+                payload = {"image": make_test_image("newone.png")}
+
+                response = self.client.patch(
+                    reverse("profile-customer"),
+                    payload,
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code,
+                                 status.HTTP_200_OK, response.data)
+                user.refresh_from_db()
+                self.assertEqual(user.first_name, "Maria")
+                self.assertEqual(user.image.name, old_image_name)
+                self.assertTrue(user.image.storage.exists(old_image_name))
+
+    def test_profile_update_can_upload_first_image(self):
+        with TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                user = User.objects.create_user(
+                    username="newname",
+                    email="original@example.com",
+                    password="StrongPass123!",
+                    phone="+49 170 1234567",
+                    is_active=True,
+                )
+
+                old_image_name = user.image.name
+
+                self.client.force_authenticate(user=user)
+
+                payload = {"image": self.make_test_image("newone.png")}
+
+                response = self.client.patch(
+                    reverse("profile-customer"),
+                    payload,
+                    format="multipart")
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                user.refresh_from_db()
+                self.assertTrue(user.image.name)
+                self.assertTrue(user.image.storage.exists(user.image.name))
