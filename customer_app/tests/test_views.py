@@ -1,3 +1,8 @@
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
+from io import BytesIO
+from django.test import override_settings
+from tempfile import TemporaryDirectory
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -546,3 +551,79 @@ class CustomerProfileViewTest(APITestCase):
 
         self.assertEqual(user1.first_name, "Maria")
         self.assertEqual(user2.first_name, "Lisa")
+
+    def test_profile_update_replaces_image_and_deletes_old_file(self):
+
+        def make_test_image(filename):
+            with BytesIO() as buffer:
+                Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
+                return SimpleUploadedFile(
+                    filename, buffer.getvalue(), content_type="image/png"
+                )
+
+        with TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                user = User.objects.create_user(
+                    username="newname",
+                    email="original@example.com",
+                    password="StrongPass123!",
+                    phone="+49 170 1234567",
+                    is_active=True,
+                    image=make_test_image("old.png")
+                )
+
+                old_image_name = user.image.name
+
+                self.client.force_authenticate(user=user)
+
+                payload = {"image": make_test_image("new.png")}
+
+                response = self.client.patch(
+                    reverse("profile-customer"),
+                    payload,
+                    format="multipart")
+
+                self.assertEqual(response.status_code,
+                                 status.HTTP_200_OK)
+                
+                user.refresh_from_db()
+                self.assertNotEqual(user.image.name, old_image_name)
+                self.assertTrue(user.image.storage.exists(user.image.name))
+                self.assertFalse(user.image.storage.exists(old_image_name))
+
+    def test_profile_update_with_invalid_image_preserves_existing_image(self):
+        def make_test_image(filename):
+            with BytesIO() as buffer:
+                Image.new("RGB", (10, 10), "blue").save(buffer, format="PNG")
+                return SimpleUploadedFile(
+                    filename, b"This is not picture", content_type="image/png"
+                )
+
+        with TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                user = User.objects.create_user(
+                    username="newname",
+                    email="original@example.com",
+                    password="StrongPass123!",
+                    phone="+49 170 1234567",
+                    is_active=True,
+                    image=make_test_image("old.png")
+                )
+
+                old_image_name = user.image.name
+
+                self.client.force_authenticate(user=user)
+
+                payload = {"image": make_test_image("newone.png")}
+
+                response = self.client.patch(
+                    reverse("profile-customer"),
+                    payload,
+                    format="multipart")
+
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
+                self.assertIn("image", response.data)
+
+                user.refresh_from_db()
+                self.assertEqual(user.image.name, old_image_name)
+                self.assertTrue(user.image.storage.exists(old_image_name))
