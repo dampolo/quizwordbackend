@@ -440,8 +440,109 @@ class CustomerProfileViewTest(APITestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_400_BAD_REQUEST, response.data)
 
-
         self.assertIn("phone", response.data)
 
         user.refresh_from_db()
         self.assertEqual(user.phone, "+49 170 1234567")
+
+    def test_unauthenticated_user_cannot_update_profile(self):
+
+        payload = {"first_name": "Anna"}
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_profile_update_can_clear_phone(self):
+        user = User.objects.create_user(
+            username="newname",
+            email="original@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "phone": "",
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK, response.data)
+
+        user.refresh_from_db()
+        self.assertEqual(user.phone, "")
+
+    def test_profile_update_preserves_omitted_phone(self):
+        user = User.objects.create_user(
+            first_name="Anna",
+            username="newname",
+            email="original@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "first_name": "Maria"
+        }
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK, response.data)
+
+        user.refresh_from_db()
+        self.assertEqual(user.first_name, "Maria")
+        self.assertEqual(user.phone, "+49 170 1234567")
+
+    def test_profile_update_ignores_other_user_id(self):
+
+        user1 = User.objects.create_user(
+            first_name="Anna",
+            username="user1",
+            email="original1@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        user2 = User.objects.create_user(
+            first_name="Lisa",
+            username="user2",
+            email="original2@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user1)
+
+        payload = {"id": user2.pk, "first_name": "Maria"}
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code,
+                         status.HTTP_200_OK, response.data)
+
+        user1.refresh_from_db()
+        user2.refresh_from_db()
+
+        self.assertEqual(user1.first_name, "Maria")
+        self.assertEqual(user2.first_name, "Lisa")
