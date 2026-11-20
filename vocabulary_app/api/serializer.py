@@ -5,6 +5,8 @@ from auth_app.user_language_status import UserLanguageStatus
 from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
                                    VocabularyConcept, VocabularyWord)
 
+import random
+
 
 class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -650,6 +652,12 @@ class UpdateCategorySerializer(serializers.ModelSerializer):
         fields = ["category_name"]
 
 
+class MultipleChoiceWordSerializer(VocabularyWordSerializer):
+    correct = serializers.BooleanField(read_only=True, default=False)
+
+    class Meta(VocabularyWordSerializer.Meta):
+        fields = (*VocabularyWordSerializer.Meta.fields, "correct")
+
 class VocabularyConceptMultipleChoiceSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
 
@@ -665,21 +673,30 @@ class VocabularyConceptMultipleChoiceSerializer(serializers.ModelSerializer):
     def get_translations(self, obj):
         user_languages = self.context["request"].user.user_languages
         language = self.context["language"]
+        from django.db.models import Value
+
 
         if language is None:
             return []
 
-        random_word = VocabularyWord.objects.filter(concept__user=self.context["request"].user,
-                                                    language_id=language).exclude(concept_id=obj.pk).order_by("?")[0:2]
+        random_words = VocabularyWord.objects.filter(concept__user=self.context["request"].user,
+                                                    language_id=language).exclude(concept_id=obj.pk).order_by("?")[0:3]
 
         translations = obj.translations.filter(
             language_id__in=[
-                user_languages.native_language.id,
+                user_languages.native_language_id,
                 language,
             ]
         )
-        print("translations: ", translations)
 
-        all_words = [*translations, *random_word]
+        source_word=translations.first()
 
-        return VocabularyWordSerializer(all_words, many=True).data
+        target_word = translations.filter(language_id=language).annotate(correct=Value(True)).first()
+
+        answer_options = [target_word, *random_words]
+        random.shuffle(answer_options)        
+        
+        all_words = [source_word, *answer_options]
+        print("all_words: ", all_words)
+
+        return MultipleChoiceWordSerializer(all_words, many=True).data

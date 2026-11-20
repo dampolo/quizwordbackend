@@ -341,7 +341,7 @@ class MultipleChoiceQuizView(APIView):
 
     def get(self, request):
         language_id = request.query_params.get("language")
-        quiz_id = request.query_params.get("quiz")
+        quiz_id = request.query_params.get("id")
 
         word_count = VocabularyWord.objects.filter(
             concept__user=request.user, language=language_id).count()
@@ -369,6 +369,6 @@ class MultipleChoiceQuizView(APIView):
 
             {
                 "quiz_id": quiz_id,
-                "concept_ids": serializer.data,
+                "concepts": serializer.data,
             }
         )
