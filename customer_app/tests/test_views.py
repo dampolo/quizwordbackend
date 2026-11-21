@@ -643,7 +643,7 @@ class CustomerProfileViewTest(APITestCase):
                 self.assertTrue(user.image.storage.exists(old_image_name))
                 self.client.force_authenticate(user=user)
 
-                payload = {"image": make_test_image("newone.png")}
+                payload = {"first_name": "Maria"}
 
                 response = self.client.patch(
                     reverse("profile-customer"),
@@ -669,8 +669,6 @@ class CustomerProfileViewTest(APITestCase):
                     is_active=True,
                 )
 
-                old_image_name = user.image.name
-
                 self.client.force_authenticate(user=user)
 
                 payload = {"image": self.make_test_image("newone.png")}
@@ -684,3 +682,28 @@ class CustomerProfileViewTest(APITestCase):
                 user.refresh_from_db()
                 self.assertTrue(user.image.name)
                 self.assertTrue(user.image.storage.exists(user.image.name))
+
+    def test_profile_update_can_remove_image_and_deletes_file(self):
+        with TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                user = User.objects.create_user(
+                    username="newname",
+                    email="original@example.com",
+                    password="StrongPass123!",
+                    phone="+49 170 1234567",
+                    is_active=True,
+                    image=self.make_test_image("old.png"),
+                )
+
+                self.client.force_authenticate(user=user)
+
+                payload = {"image": ""}
+
+                response = self.client.patch(
+                    reverse("profile-customer"),
+                    payload,
+                    format="multipart")
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                user.refresh_from_db()
+                self.assertFalse(user.image.name)

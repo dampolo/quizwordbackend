@@ -689,14 +689,16 @@ class VocabularyConceptMultipleChoiceSerializer(serializers.ModelSerializer):
             ]
         )
 
-        source_word=translations.first()
+        # Filter by native language so the prompt stays in the user's native language.
+        # The order of language IDs in __in does not determine the order of the results.
+        source_word=translations.filter(language_id=user_languages.native_language_id).first()
 
+        # Filter by target language before marking its translation as the correct answer.
         target_word = translations.filter(language_id=language).annotate(correct=Value(True)).first()
 
         answer_options = [target_word, *random_words]
         random.shuffle(answer_options)        
         
         all_words = [source_word, *answer_options]
-        print("all_words: ", all_words)
 
         return MultipleChoiceWordSerializer(all_words, many=True).data
