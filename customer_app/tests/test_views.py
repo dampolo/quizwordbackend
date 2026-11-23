@@ -716,7 +716,6 @@ class CustomerProfileViewTest(APITestCase):
             password="StrongPass123!",
             phone="+49 170 1234567",
             is_active=True,
-            image=self.make_test_image("old.png"),
             is_superuser=False
         )
 
@@ -736,3 +735,34 @@ class CustomerProfileViewTest(APITestCase):
         user.refresh_from_db()
         self.assertFalse(user.is_superuser)
         self.assertEqual(user.first_name, "Maria")
+
+    def test_unauthenticated_user_cannot_retrieve_profile(self):
+        response = self.client.get(reverse("profile-customer"))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_profile_update_ignores_read_only_is_active(self):
+        user = User.objects.create_user(
+            username="newname",
+            first_name="Anna",
+            email="original@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {"is_active": False, "first_name": "Maria"}
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        user.refresh_from_db()
+        self.assertEqual(user.first_name, "Maria")
+        self.assertTrue(user.is_active)
+
