@@ -5,3 +5,10 @@ class TranslateSerializer(serializers.Serializer):
     text = serializers.CharField(max_length=1000)
     source = serializers.ChoiceField(choices=["de", "en", "es", "fr"])
     target = serializers.ChoiceField(choices=["de", "en", "es", "fr"])
+
+
+class VerbConjugationSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(
+        choices=["fr", "es", "it", "pt"]
+    )
+    verb = serializers.CharField(max_length=100)
