@@ -91,6 +91,35 @@ class ChangePasswordViewTest(APITestCase):
         self.assertEqual(response.status_code,
                          status.HTTP_401_UNAUTHORIZED, response.data)
 
+    def test_mismatched_new_passwords_do_not_change_password(self):
+        old_password = "StrongPass123!"
+        user = User.objects.create_user(
+            username="old-name",
+            email="test@example.com",
+            password=old_password,
+            is_active=True
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "old_password": old_password,
+            "new_password": "NewPassword123!",
+            "repeated_new_password": "NewPassword123!!",
+        }
+
+        response = self.client.post(
+            reverse("change-password"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("repeated_new_password", response.data)
+        user.refresh_from_db()
+        self.assertFalse(user.check_password(payload["new_password"]))
+        self.assertTrue(user.check_password(old_password))
+
 
 class ChangeUsernameViewTest(APITestCase):
     def test_change_username_saves_new_username_and_sends_email(self):
@@ -450,6 +479,32 @@ class CustomerProfileViewTest(APITestCase):
         user.refresh_from_db()
         self.assertEqual(user.phone, "+49 170 1234567")
 
+    def test_profile_update_saves_valid_phone(self):
+        user = User.objects.create_user(
+            username="newname",
+            email="original@example.com",
+            password="StrongPass123!",
+            phone="+49 170 1234567",
+            is_active=True,
+        )
+
+        self.client.force_authenticate(user=user)
+
+        payload = {
+            "phone": "+49 170 12312345"
+        }
+
+        response = self.client.patch(
+            reverse("profile-customer"),
+            payload,
+            format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("phone", response.data)
+        user.refresh_from_db()
+        self.assertEqual(user.phone, "+49 170 12312345")
+
     def test_unauthenticated_user_cannot_update_profile(self):
 
         payload = {"first_name": "Anna"}
@@ -765,4 +820,3 @@ class CustomerProfileViewTest(APITestCase):
         user.refresh_from_db()
         self.assertEqual(user.first_name, "Maria")
         self.assertTrue(user.is_active)
-
