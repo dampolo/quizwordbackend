@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from invoice_app.models import Invoice, InvoiceService, ServiceCatalog, Tax
 from company_app.models import Company
@@ -8,13 +9,63 @@ from invoice_app.invoice_number import GenerateInvoiceNumber
 class InvoiceServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceService
-        fields = ['id', 'service_name', 'provision_type',
-                  'provision_fixed', 'provision_percent', 'provision_amount']
+        fields = ['id', 'invoice', 'abo_choice', 'amount']
+        read_only_fields = ['amount']
+
+    def validate(self, attrs):
+        if self.instance is not None and 'invoice' in attrs:
+            if attrs['invoice'].pk != self.instance.invoice_id:
+                raise serializers.ValidationError({
+                    'invoice': 'Die Rechnung einer Position kann nicht gewechselt werden.'
+                })
+        if self.instance is None or 'abo_choice' in attrs:
+            plan = attrs.get('abo_choice')
+            try:
+                catalog = ServiceCatalog.objects.get(abo_choice=plan)
+            except ServiceCatalog.DoesNotExist:
+                raise serializers.ValidationError({
+                    'abo_choice': 'Für diesen Tarif wurde noch kein Preis hinterlegt.'
+                })
+            if self.instance is None or plan != self.instance.abo_choice:
+                attrs['amount'] = catalog.amount
+        return attrs
+
+
+    @transaction.atomic
+    def create(self, validated_data):
+        service = super().create(validated_data)
+        Invoice.objects.filter(pk=service.invoice_id).update(
+            abo_choice=service.abo_choice,
+            amount=service.amount,
+        )
+        return service
+
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        service = super().update(instance, validated_data)
+        Invoice.objects.filter(pk=service.invoice_id).update(
+            abo_choice=service.abo_choice,
+            amount=service.amount,
+        )
+        return service
+
+
+class NestedInvoiceServiceSerializer(InvoiceServiceSerializer):
+    class Meta(InvoiceServiceSerializer.Meta):
+        fields = ['id', 'abo_choice', 'amount']
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
-    services = InvoiceServiceSerializer(many=True,)
-    customer = serializers.IntegerField(write_only=True)
+    services = NestedInvoiceServiceSerializer(
+        many=True,
+        allow_empty=False,
+        max_length=1,
+    )
+    customer = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role=User.ProfileType.CUSTOMER),
+        write_only=True,
+    )
 
     class Meta:
         model = Invoice
@@ -36,10 +87,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'discount',
             'discount_amount_value',
 
-            'amount', 
-            'provision', 
+            'amount',
             'value_tax',
-            'investitions_amount', 
+            'value_tax_amount',
 
             # relations
             'customer', 'business',
@@ -50,7 +100,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'notes_template',
             'notes',
             'payment_method',
-            'invoice_category',
+            'abo_choice',
 
             # SERVICES LAST
             'services',
@@ -59,6 +109,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # Read-only fields: CANNOT be set by frontend
         read_only_fields = [
             'id',
+            'abo_choice',
+            'amount',
             'business',
             'invoice_status',
             'invoice_number',
@@ -89,24 +141,28 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'discount',
             'discount_amount_value',
 
-            # Services
-            'services',
         ]
 
+    @transaction.atomic
     def create(self, validated_data):
         request = self.context['request']
         current_user = request.user  # BUSINESS
 
-        services_data = validated_data.pop('services', [])
+        services_data = validated_data.pop('services')
+        service_data = services_data[0]
+        validated_data['abo_choice'] = service_data['abo_choice']
+        validated_data['amount'] = service_data['amount']
 
-        customer_id = validated_data.pop('customer')
-        customer = User.objects.get(id=customer_id)
+        customer = validated_data.pop('customer')
 
         if current_user.role != User.ProfileType.BUSINESS:
             raise serializers.ValidationError(
                 "Only business users can create invoices.")
 
         company = Company.objects.first()
+
+        if company is None:
+            raise serializers.ValidationError('Bitte zuerst die Firmendaten hinterlegen.')
 
         invoice = Invoice.objects.create(
             **validated_data,
@@ -138,20 +194,34 @@ class InvoiceSerializer(serializers.ModelSerializer):
             company_logo=company.logo,
         )
 
-        for service_data in services_data:
-            InvoiceService.objects.create(
-                invoice=invoice,
-                **service_data
-            )
+        InvoiceService.objects.create(invoice=invoice, **service_data)
 
         return invoice
+
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        services_data = validated_data.pop('services', None)
+        if services_data is not None:
+            service_data = services_data[0]
+            service = instance.services.first()
+            if service is not None and service.abo_choice == service_data['abo_choice']:
+                service_data['amount'] = service.amount
+            validated_data['abo_choice'] = service_data['abo_choice']
+            validated_data['amount'] = service_data['amount']
+        instance = super().update(instance, validated_data)
+        if services_data is not None:
+            instance.services.update_or_create(
+                defaults=service_data,
+                invoice=instance,
+            )
+        return instance
 
 
 class ServiceCatalogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCatalog
-        fields = ['id', 'service_name', 'provision_type',
-                  'provision_fixed', 'provision_percent']
+        fields = ['id', 'abo_choice', 'amount']
 
 
 class TaxSerializer(serializers.ModelSerializer):
@@ -166,11 +236,11 @@ class CustomerInvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'invoice_number', 'service_name', 'invoice_status', 'invoice_category','created_at']    
-        read_only_fields = ['id', 'invoice_number', 'service_name','invoice_status', 'invoice_category', 'created_at']
+        fields = ['id', 'invoice_number', 'service_name', 'invoice_status', 'abo_choice','created_at']
+        read_only_fields = ['id', 'invoice_number', 'service_name','invoice_status', 'abo_choice', 'created_at']
 
     def get_service_name(self, obj):
         service = obj.services.first()
         if service:
-            return service.service_name
+            return service.get_abo_choice_display()
         return ""

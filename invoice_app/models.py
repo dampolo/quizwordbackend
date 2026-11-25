@@ -1,13 +1,10 @@
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 from auth_app.models import User
 
 from django.utils.translation import gettext_lazy as _
-from auth_app.models import User
-
-
-class PriceType(models.TextChoices):
-    FIXED = 'fixed', _('Fixed Amount (€)')
-    PERCENT = 'percent', _('Percentage (%)')
 
 
 class PaymentMethod(models.TextChoices):
@@ -28,37 +25,6 @@ class TextSnippet(models.Model):
 
     def __str__(self):
         return self.key
-
-
-class ServiceCatalog(models.Model):
-
-    service_name = models.CharField(max_length=200)
-
-    provision_type = models.CharField(
-        max_length=20,
-        choices=PriceType.choices,
-        default=PriceType.FIXED
-    )
-
-    # Fixed amount (example: 700.00 €)
-    provision_fixed = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
-
-    # Percent amount (example: 0.05 = 5%)
-    provision_percent = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Percentage as decimal (e.g. 0.05 = 5%)"
-    )
-
-    def __str__(self):
-        return f"{self.name} ({self.price_type})"
 
 
 class InvoiceType(models.TextChoices):
@@ -186,47 +152,52 @@ class InvoiceService(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=models.Q(abo_choice__in=["premium", "pro"]),
-                name="abo_price_valid_choice",
+            models.UniqueConstraint(
+                fields=['invoice'],
+                name='invoice_single_service',
             ),
             models.CheckConstraint(
-                condition=models.Q(price__gte=0),
-                name="abo_price_nonnegative",
+                condition=models.Q(abo_choice__in=["premium", "pro"]),
+                name="invoice_service_valid_choice",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gte=0),
+                name="invoice_service_nonnegative",
             ),
         ]
 
     def __str__(self):
-        return f"{self.get_abo_choice_display()}: {self.price} €"
+        return f"{self.get_abo_choice_display()}: {self.amount} €"
 
 
 class ServiceCatalog(models.Model):
     abo_choice = models.CharField(
         max_length=20,
         choices=AboChoice.choices,
+        unique=True,
     )
 
     # PRICE for this line item
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0
+        validators=[MinValueValidator(Decimal("0"))],
     )
 
     class Meta:
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(abo_choice__in=["premium", "pro"]),
-                name="abo_price_valid_choice",
+                name="service_catalog_valid_choice",
             ),
             models.CheckConstraint(
-                condition=models.Q(price__gte=0),
-                name="abo_price_nonnegative",
+                condition=models.Q(amount__gte=0),
+                name="service_catalog_nonnegative",
             ),
         ]
 
     def __str__(self):
-        return f"{self.get_abo_choice_display()}: {self.price} €"
+        return f"{self.get_abo_choice_display()}: {self.amount} €"
 
 
 class Tax(models.Model):

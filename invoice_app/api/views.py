@@ -8,10 +8,8 @@ from django.shortcuts import render
 from company_app.models import Company
 from auth_app.models import User
 from rest_framework import status
-from django.db import transaction
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
 from django.conf import settings
 import os
 from rest_framework import permissions 
@@ -71,6 +69,8 @@ class InvoiceView(ModelViewSet):
             "invoice": invoice
         })
 
+        from weasyprint import HTML
+
         html = HTML(
             string=html_string,
             base_url=request.build_absolute_uri()
@@ -101,61 +101,9 @@ class InvoiceServiceView(ModelViewSet):
 class ServiceCatalogView(ModelViewSet):
     queryset = ServiceCatalog.objects.all()
     serializer_class = ServiceCatalogSerializer
+    permission_classes = [permissions.IsAdminUser]
 
-    @action(detail=False, methods=['put'])
-    def bulk_update(self, request):
 
-        data = request.data
-
-        errors = []
-        saved = []
-
-        with transaction.atomic():
-            for index, item in enumerate(data):
-                item_id = item.get('id')
-
-                instance = None
-
-                if item_id is not None:
-                    instance = ServiceCatalog.objects.filter(
-                        pk=item_id).first()
-
-                serializer = self.get_serializer(
-                    instance=instance,
-                    data=item,
-                    partial=False,
-                )
-
-                if serializer.is_valid():
-                    obj = serializer.save()
-                    saved.append(ServiceCatalogSerializer(obj).data)
-                else:
-                    errors.append(
-                        {
-                            'index': index,
-                            'error': serializer.errors
-                        }
-                    )
-
-            if errors:
-                transaction.set_rollback(True)
-                return Response(
-                    {
-                        'status': 'failed',
-                        'message': 'Validation failed. No changes were applied.',
-                        'errors': errors,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        return Response(
-            {
-                'status': 'OK',
-                'count': len(saved),
-                'results': saved,
-            },
-            status=status.HTTP_200_OK,
-        )
 
 class TaxAPIView(APIView):
     permission_classes = [AllowAny]
