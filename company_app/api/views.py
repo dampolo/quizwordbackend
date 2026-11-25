@@ -22,11 +22,11 @@ class CompanyView(APIView):
     def post(self, request):
         if Company.objects.exists():
             return Response({'message': 'Company already exists'}, status=status.HTTP_409_CONFLICT)
-        return self._save(request)
+        return self._save_company(request)
 
 
     def patch(self, request):
-        return self._save(request, Company.objects.first())
+        return self._save_company(request, Company.objects.first())
 
 
     def delete(self, request):
@@ -36,7 +36,7 @@ class CompanyView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-    def _save(self, request, company=None):
+    def _save_company(self, request, company=None):
         serializer = CompanySerializer(
             company, data=request.data, partial=company is not None,
             context={'request': request},
