@@ -28,6 +28,8 @@ urlpatterns = [
     path('api/', include('company_app.api.urls')),
     path('api/', include('support_app.api.urls')),
     path('api/', include('translation_app.api.urls')),
+    path('api/', include('invoice_app.api.urls')),
+
     # Google
     path("api/accounts/", include("allauth.urls")),
 ]

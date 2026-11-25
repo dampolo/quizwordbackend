@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'customer_app',
     'company_app',
     'translation_app',
+    'invoice_app',
     # Google
     "allauth",
     "allauth.account",

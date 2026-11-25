@@ -18,6 +18,9 @@ class Company(models.Model):
     bank_account = models.CharField(max_length=34)
     swift_code = models.CharField(max_length=11)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         constraints = [
             models.CheckConstraint(condition=models.Q(id=1), name='company_single_profile'),
