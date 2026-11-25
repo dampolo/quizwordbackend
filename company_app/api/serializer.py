@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from company_app.models import Company
-from auth_app.models import User
 import re
 from datetime import datetime
 
@@ -23,14 +22,7 @@ class CompanySerializer(serializers.ModelSerializer):
             'bank_account',
             'swift_code',
         ]
-    
-    def get_logo(self, company):
-        request = self.context.get('request')
 
-        if not company.logo:
-            return None
-
-        return request.build_absolute_uri(company.logo.url)
 
     def validate_postcode(self, value):
         pattern = re.compile(r'^[0-9]{4,5}$')
@@ -39,7 +31,8 @@ class CompanySerializer(serializers.ModelSerializer):
                 'Postcode must be 4 or 5 digits.'
                 )
         return value
-    
+
+
     def validate_city(self, value):
         pattern = re.compile(r'^[A-Za-zÀ-ÖØ-öø-ÿ\s-]+$')
         if not pattern.match(value):
@@ -47,7 +40,8 @@ class CompanySerializer(serializers.ModelSerializer):
             "City may contain only letters, spaces, and hyphens."
         )
         return value
-    
+
+
     def validate_tax_number(self, value):
         pattern = re.compile(r'^DE[0-9]{9}$')
         if not pattern.match(value):
@@ -55,6 +49,7 @@ class CompanySerializer(serializers.ModelSerializer):
             "Tax number must start with 'DE' followed by 9 digits. Example: DE123456789."
         )
         return value            
+
 
     def validate_founding(self, value):
         pattern = re.compile(r'^[0-9]{4}$')
@@ -75,11 +70,7 @@ class CompanySerializer(serializers.ModelSerializer):
         
         return value
 
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists() and Company.objects.filter(email=value).exists:
-            raise serializers.ValidationError("This email exists already.")
-        return value
-    
+
     def validate_swift_code(self, value):
         pattern = re.compile(r'^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$')
         if not pattern.match(value):
@@ -87,7 +78,8 @@ class CompanySerializer(serializers.ModelSerializer):
             "Invalid SWIFT/BIC format. Example: DEUTDEFF or NEDSZAJJXXX."
         )
         return value
-        
+
+
     def validate_bank_account(self, value):
         pattern = re.compile(r'^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$')
         if not pattern.match(value):
@@ -95,6 +87,7 @@ class CompanySerializer(serializers.ModelSerializer):
             "Invalid IBAN format. Example: DE44500105175407324931"
         )
         return value
+
 
     def validate(self, attrs):
         for key, value in attrs.items():

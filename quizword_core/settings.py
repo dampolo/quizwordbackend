@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'vocabulary_app',
     'quiz_app',
     'customer_app',
+    'company_app',
     'translation_app',
     # Google
     "allauth",

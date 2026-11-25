@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/', include('vocabulary_app.api.urls')),
     path('api/', include('quiz_app.api.urls')),
     path('api/', include('customer_app.api.urls')),
+    path('api/', include('company_app.api.urls')),
     path('api/', include('support_app.api.urls')),
     path('api/', include('translation_app.api.urls')),
     # Google
