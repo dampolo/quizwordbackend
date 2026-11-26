@@ -4,12 +4,12 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from rest_framework import permissions, status
+from rest_framework import mixins, permissions, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
 
 from auth_app.models import User
 from company_app.models import Company
@@ -20,8 +20,12 @@ from .serializer import (InvoiceSerializer, InvoiceServiceSerializer,
                          ServiceCatalogSerializer, TaxSerializer)
 
 
-# You can onyl see the list of the invoices but you cannot change the invoice
-class InvoiceView(ModelViewSet):
+class InvoiceView(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    GenericViewSet,
+):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
 
@@ -41,7 +45,7 @@ class InvoiceView(ModelViewSet):
 
         # Update status
         invoice.invoice_status = new_status
-        invoice.save()
+        invoice.save(update_fields=['invoice_status'])
 
         return Response(
             {"status": f"Payment status updated to: {new_status}"},
@@ -87,12 +91,13 @@ class InvoiceView(ModelViewSet):
         )
         
         return response    
-    
-class InvoiceServiceView(ModelViewSet):
+
+# Service will be added to invoice
+class InvoiceServiceView(ReadOnlyModelViewSet):
     queryset = InvoiceService.objects.all()
     serializer_class = InvoiceServiceSerializer
 
-
+# Admin can put Premium and Pro
 class ServiceCatalogView(ModelViewSet):
     queryset = ServiceCatalog.objects.all()
     serializer_class = ServiceCatalogSerializer

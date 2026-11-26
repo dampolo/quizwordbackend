@@ -123,14 +123,10 @@ class Invoice(models.Model):
     value_tax = models.DecimalField(decimal_places=2, max_digits=10)
     value_tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
-    notes_template = models.TextField(blank=True)
-
-    notes = models.TextField(blank=True)
-
     def __str__(self):
         return f"Invoice {self.invoice_number}"
 
-
+# Service for user, Premium or Pro
 class InvoiceService(models.Model):
     invoice = models.ForeignKey(
         Invoice,
@@ -149,6 +145,9 @@ class InvoiceService(models.Model):
         decimal_places=2,
         default=0
     )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
@@ -169,7 +168,7 @@ class InvoiceService(models.Model):
     def __str__(self):
         return f"{self.get_abo_choice_display()}: {self.amount} €"
 
-
+# Admin can add new service to catalog
 class ServiceCatalog(models.Model):
     abo_choice = models.CharField(
         max_length=20,
@@ -183,6 +182,9 @@ class ServiceCatalog(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0"))],
     )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [

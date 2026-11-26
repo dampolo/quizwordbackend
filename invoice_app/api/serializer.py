@@ -42,16 +42,6 @@ class InvoiceServiceSerializer(serializers.ModelSerializer):
         return service
 
 
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        service = super().update(instance, validated_data)
-        Invoice.objects.filter(pk=service.invoice_id).update(
-            abo_choice=service.abo_choice,
-            amount=service.amount,
-        )
-        return service
-
-
 class NestedInvoiceServiceSerializer(InvoiceServiceSerializer):
     class Meta(InvoiceServiceSerializer.Meta):
         fields = ['id', 'abo_choice', 'amount']
@@ -98,8 +88,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # system fields
             'created_at', 'updated_at', 'is_finalized',
 
-            'notes_template',
-            'notes',
             'payment_method',
             'abo_choice',
 
@@ -198,25 +186,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
         InvoiceService.objects.create(invoice=invoice, **service_data)
 
         return invoice
-
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        services_data = validated_data.pop('services', None)
-        if services_data is not None:
-            service_data = services_data[0]
-            service = instance.services.first()
-            if service is not None and service.abo_choice == service_data['abo_choice']:
-                service_data['amount'] = service.amount
-            validated_data['abo_choice'] = service_data['abo_choice']
-            validated_data['amount'] = service_data['amount']
-        instance = super().update(instance, validated_data)
-        if services_data is not None:
-            instance.services.update_or_create(
-                defaults=service_data,
-                invoice=instance,
-            )
-        return instance
 
 
 class ServiceCatalogSerializer(serializers.ModelSerializer):
