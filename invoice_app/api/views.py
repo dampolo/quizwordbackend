@@ -1,20 +1,24 @@
-from rest_framework.viewsets import ModelViewSet
-from .serializer import InvoiceSerializer, InvoiceServiceSerializer, ServiceCatalogSerializer, TaxSerializer
-from invoice_app.models import Invoice, InvoiceService, ServiceCatalog, Tax, PaymentStatus
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.shortcuts import render
-from company_app.models import Company
-from auth_app.models import User
-from rest_framework import status
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.conf import settings
 import os
-from rest_framework import permissions 
-from rest_framework.views import APIView
+
+from django.conf import settings
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.template.loader import render_to_string
+from rest_framework import permissions, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
+from auth_app.models import User
+from company_app.models import Company
+from invoice_app.models import (Invoice, InvoiceService, PaymentStatus,
+                                ServiceCatalog, Tax)
+
+from .serializer import (InvoiceSerializer, InvoiceServiceSerializer,
+                         ServiceCatalogSerializer, TaxSerializer)
+
 
 # You can onyl see the list of the invoices but you cannot change the invoice
 class InvoiceView(ModelViewSet):
@@ -51,15 +55,6 @@ class InvoiceView(ModelViewSet):
         return render(request, 'templates/invoice.html', {
             "invoice": invoice
         })
-
-    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny] )
-    def preview_course(self, request, pk=None):
-        invoice = self.get_object()
-
-        return render(request, 'templates/invoice_course.html', {
-            "invoice": invoice
-        })
-
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def pdf(self, request, pk='None'):

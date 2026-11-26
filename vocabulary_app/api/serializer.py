@@ -1,11 +1,11 @@
+import random
+
 from django.db import transaction
 from rest_framework import serializers
 
 from auth_app.user_language_status import UserLanguageStatus
 from vocabulary_app.models import (Language, UserLanguages, VocabularyCategory,
                                    VocabularyConcept, VocabularyWord)
-
-import random
 
 
 class LanguageSerializer(serializers.ModelSerializer):

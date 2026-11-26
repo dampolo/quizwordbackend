@@ -1,19 +1,18 @@
 import html
+from functools import lru_cache
 
 import requests
 from django.conf import settings
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
-from functools import lru_cache
-
 from verbecc import CompleteConjugator
 from verbecc.core.defs.types.exceptions import ConjugatorError
 
-
-from translation_app.api.serializer import TranslateSerializer, VerbConjugationSerializer
+from translation_app.api.serializer import (TranslateSerializer,
+                                            VerbConjugationSerializer)
 
 
 class TranslateView(APIView):

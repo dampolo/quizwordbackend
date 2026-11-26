@@ -2,9 +2,9 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
-from auth_app.models import User
-
 from django.utils.translation import gettext_lazy as _
+
+from auth_app.models import User
 
 
 class PaymentMethod(models.TextChoices):

@@ -4,11 +4,11 @@ from types import SimpleNamespace
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
 from PIL import Image
-from rest_framework import serializers
-from auth_app.models import User
-from rest_framework import status, response
+from rest_framework import response, serializers, status
 
-from customer_app.api.serializer import CustomerProfileSerializer, ChangePasswordSerializer
+from auth_app.models import User
+from customer_app.api.serializer import (ChangePasswordSerializer,
+                                         CustomerProfileSerializer)
 
 
 class CustomerProfileSerializerTest(SimpleTestCase):

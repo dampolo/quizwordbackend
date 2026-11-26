@@ -13,9 +13,8 @@ class GenerateInvoiceNumber:
         - Increments it by 1
         - Returns the new number formatted with leading zeros
         """
-        from django.db.models import Max
-        from django.db.models.functions import Substr, Cast
-        from django.db.models import IntegerField
+        from django.db.models import IntegerField, Max
+        from django.db.models.functions import Cast, Substr
 
         # Annotate each customer with the numeric portion of customer_number
         # Example: "#000123" → 123
