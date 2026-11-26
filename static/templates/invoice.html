@@ -41,27 +41,14 @@
           <thead>
             <tr>
               <th>Service</th>
-              <th>Provison</th>
               <th>Gebühr</th>
             </tr>
           </thead>
           <tbody>
-            {% for service in invoice.services.all %}
-              <tr>
-                
-                {% if service.provision_fixed == null %}
-                <td>{{ service.service_name }}</td>
-                <td>{{ service.provision_percent }} %</td>
-                <td>{{ service.provision_amount }} €</td>
-
-                {% else %}
-                  <td>{{ service.service_name }}</td>
-                  <td></td>
-                  <td>{{ service.provision_fixed }} €</td>
-                {% endif %}
-
-              </tr>
-            {% endfor %}
+            <tr>
+              <td>{{ invoice.get_abo_choice_display }}</td>
+              <td>{{ invoice.amount }} €</td>
+            </tr>
           </tbody>
         </table>
 

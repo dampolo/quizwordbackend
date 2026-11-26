@@ -9,14 +9,14 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from auth_app.models import User
 from company_app.models import Company
-from invoice_app.models import (Invoice, InvoiceService, PaymentStatus,
+from invoice_app.models import (Invoice, PaymentStatus,
                                 ServiceCatalog, Tax)
 
-from .serializer import (InvoiceSerializer, InvoiceServiceSerializer,
+from .serializer import (InvoiceSerializer,
                          ServiceCatalogSerializer, TaxSerializer)
 
 
@@ -93,11 +93,6 @@ class InvoiceView(
         return response    
 
 # Service will be added to invoice
-class InvoiceServiceView(ReadOnlyModelViewSet):
-    queryset = InvoiceService.objects.all()
-    serializer_class = InvoiceServiceSerializer
-
-# Admin can put Premium and Pro
 class ServiceCatalogView(ModelViewSet):
     queryset = ServiceCatalog.objects.all()
     serializer_class = ServiceCatalogSerializer

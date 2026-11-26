@@ -49,6 +49,14 @@ class Invoice(models.Model):
         default=InvoiceType.INVOICE
     )
 
+    related_invoice = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="credit_notes",
+    )
+
     invoice_status = models.CharField(
         max_length=20,
         choices=PaymentStatus.choices,
@@ -123,52 +131,12 @@ class Invoice(models.Model):
     value_tax = models.DecimalField(decimal_places=2, max_digits=10)
     value_tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
+    notes = models.TextField(blank=True)
+
     def __str__(self):
         return f"Invoice {self.invoice_number}"
 
 # Service for user, Premium or Pro
-class InvoiceService(models.Model):
-    invoice = models.ForeignKey(
-        Invoice,
-        related_name="services",
-        on_delete=models.PROTECT
-    )
-
-    abo_choice = models.CharField(
-        max_length=20,
-        choices=AboChoice.choices,
-    )
-
-    # PRICE for this line item
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['invoice'],
-                name='invoice_single_service',
-            ),
-            models.CheckConstraint(
-                condition=models.Q(abo_choice__in=["premium", "pro"]),
-                name="invoice_service_valid_choice",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(amount__gte=0),
-                name="invoice_service_nonnegative",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.get_abo_choice_display()}: {self.amount} €"
-
-# Admin can add new service to catalog
 class ServiceCatalog(models.Model):
     abo_choice = models.CharField(
         max_length=20,
