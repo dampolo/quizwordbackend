@@ -25,26 +25,26 @@ class InvoiceSerializer(serializers.ModelSerializer):
             # customer snapshot
             'user_customer_id', 'user_customer_number',
             'user_customer_first_name', 'user_customer_last_name', 'user_customer_street',
-            'user_customer_street_number', 'user_customer_postcode', 'user_customer_city',
+            'user_customer_street_number', 'user_customer_postcode', 'user_customer_city', 'user_customer_country',
 
 
             # company snapshot
             'company_name', 'company_street', 'company_street_number', 'company_postcode',
-            'company_city', 'company_tax_number', 'company_email', 'company_bank',
+            'company_city', 'company_country', 'company_tax_number', 'company_email', 'company_bank',
             'company_bank_account', 'company_swift_code', 'company_logo',
 
             # invoice totals
             'discount_percentage', 'discount_amount',
 
             'base_net_amount', 'net_amount', 'tax_percentage',
-            'tax_amount', 'gross_price',
+            'tax_amount', 'gross_amount',
 
             # relations
             'customer', 'business',
 
             # system fields
             'created_at', 'updated_at', 'is_finalized',
-            'issue_date', 'due_date', 'paypal_date', 'stripe_date',
+            'issue_date', 'due_date', 'paid_at',
 
             'payment_method',
             'abo_choice',
@@ -55,19 +55,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'base_net_amount', 'net_amount', 'tax_percentage',
-            'tax_amount', 'gross_price',
+            'tax_amount', 'gross_amount',
             'business',
             'invoice_status',
             'invoice_number',
             'created_at',
             'updated_at',
-            'paypal_date', 'stripe_date',
+            'paid_at',
             'is_finalized',
 
             # Customer snapshot
             'user_customer_id', 'user_customer_number',
             'user_customer_first_name', 'user_customer_last_name', 'user_customer_street',
-            'user_customer_street_number', 'user_customer_postcode', 'user_customer_city',
+            'user_customer_street_number', 'user_customer_postcode', 'user_customer_city', 'user_customer_country',
 
 
             # Company snapshot
@@ -76,6 +76,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'company_street_number',
             'company_postcode',
             'company_city',
+            'company_country',
             'company_tax_number',
             'company_email',
             'company_bank',
@@ -109,7 +110,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             net_amount=net_amount,
             tax_percentage=tax_percentage,
             tax_amount=gross_price - net_amount,
-            gross_price=gross_price,
+            gross_amount=gross_price,
         )
         return attrs
 
@@ -145,6 +146,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             user_customer_street_number=customer.street_number,
             user_customer_postcode=customer.postcode,
             user_customer_city=customer.city,
+            user_customer_country=customer.country,
 
             # COMPANY SNAPSHOT
             company_name=company.name,
@@ -152,6 +154,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             company_street_number=company.street_number,
             company_postcode=company.postcode,
             company_city=company.city,
+            company_country=company.country,
             company_tax_number=company.tax_number,
             company_email=company.email,
             company_bank=company.bank,
@@ -183,7 +186,7 @@ class CustomerInvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = [
             'id', 'invoice_number', 'service_name', 'invoice_status', 'abo_choice',
-            'created_at', 'issue_date', 'due_date', 'paypal_date', 'stripe_date',
+            'created_at', 'issue_date', 'due_date', 'paid_at',
         ]
         read_only_fields = fields
 

@@ -24,6 +24,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             'street_number',
             'postcode',
             'city',
+            'country',
             'email',
             'phone',
             'has_subscription',

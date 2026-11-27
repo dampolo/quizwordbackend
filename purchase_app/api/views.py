@@ -4,8 +4,8 @@ from purchase_app import models
 from rest_framework import permissions
 from purchase_app.services import CheckPurchase
 from rest_framework.response import Response
-from rest_framework.views import APIView, View
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 
@@ -15,7 +15,9 @@ class CustomerPurchasesAPI(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return models.Purchase.objects.filter(customer=self.request.user)
+        return models.Purchase.objects.filter(
+            customer=self.request.user,
+        ).select_related('invoice', 'service')
 
 
 class CheckPurchaseView(APIView):
@@ -28,7 +30,7 @@ class CheckPurchaseView(APIView):
             service_id
         )
 
-        if response:
+        if response is not None:
             return response
 
         return Response(

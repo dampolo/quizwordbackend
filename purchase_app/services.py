@@ -26,10 +26,17 @@ class PurchaseService:
         if customer.role != User.ProfileType.CUSTOMER:
             raise ValidationError('Der Empfaenger muss ein Kunde sein.')
 
-        gross_price = service.amount
+        if tax is None:
+            raise ValidationError('Bitte zuerst die Steuerdaten hinterlegen.')
+        if company is None:
+            raise ValidationError('Bitte zuerst die Firmendaten hinterlegen.')
+        if business is None:
+            raise ValidationError('Bitte zuerst einen Geschaeftskunden hinterlegen.')
+
+        catalog_gross_price = service.amount
         tax_percent = tax.percent if tax.active else Decimal('0.00')
         discount_percent = Decimal('0.00')
-        
+
         if discount is not None:
             if not discount.active:
                 raise ValidationError('Der Rabattcode ist nicht aktiv.')
@@ -41,18 +48,34 @@ class PurchaseService:
             raise ValidationError(
                 'Der Rabatt muss zwischen 0 und 100 Prozent liegen.')
 
-        discount_amount = (gross_price * discount_percent / Decimal('100')).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP,
-        )
+        # Catalog prices include tax; snapshots store the discount on the net amount.
+        base_net_amount = (catalog_gross_price / (
+            Decimal('1') + tax_percent / Decimal('100')
+        )).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-        total = (gross_price - discount_amount).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP,
-        )
 
-        # Catalog prices include tax; extract its share from the discounted total.
-        tax_amount = (total * tax_percent / (Decimal('100') + tax_percent)).quantize(
+        discount_amount = (base_net_amount * discount_percent / Decimal('100')).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP,
         )
+        
+        net_amount = base_net_amount - discount_amount
+
+        # Preserve the catalog gross price, including cent rounding, without a discount.
+        gross_price = (catalog_gross_price * (
+            Decimal('1') - discount_percent / Decimal('100')
+        )).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        tax_amount = gross_price - net_amount
+
+        amounts = {
+            'base_net_amount': base_net_amount,
+            'discount_percentage': discount_percent,
+            'discount_amount': discount_amount,
+            'net_amount': net_amount,
+            'tax_percentage': tax_percent,
+            'tax_amount': tax_amount,
+            'gross_price': gross_price,
+        }
 
         invoice = Invoice.objects.create(
             business=business,
@@ -61,11 +84,7 @@ class PurchaseService:
             invoice_status=PaymentStatus.UNPAID,
             payment_method=PaymentMethod.BANK_TRANSFER,
             abo_choice=service.abo_choice,
-            discount=discount_percent,
-            discount_amount_value=discount_amount,
-            amount=gross_price,
-            value_tax=tax_percent,
-            value_tax_amount=tax_amount,
+            **amounts,
             user_customer_id=customer.id,
             user_customer_number=customer.customer_number,
             user_customer_first_name=customer.first_name,
@@ -92,12 +111,7 @@ class PurchaseService:
             service=service,
             discount=discount,
             status=PaymentStatus.UNPAID,
-            subtotal=gross_price,
-            discount_percent=discount_percent,
-            discount_amount=discount_amount,
-            tax_percent=tax_percent,
-            tax_amount=tax_amount,
-            total=total,
+            **amounts,
             payment_method=PaymentMethod.BANK_TRANSFER,
         )
         if request is not None:

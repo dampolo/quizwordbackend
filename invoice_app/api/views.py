@@ -14,7 +14,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from auth_app.models import User
 from company_app.models import Company
-from invoice_app.models import (Invoice, PaymentMethod, PaymentStatus,
+from invoice_app.models import (Invoice, PaymentStatus,
                                 ServiceCatalog, Tax)
 
 from .serializer import (InvoiceSerializer,
@@ -47,14 +47,9 @@ class InvoiceView(
         # Update status
         invoice.invoice_status = new_status
         update_fields = ['invoice_status', 'updated_at']
-        if new_status == PaymentStatus.PAID:
-            payment_date_field = {
-                PaymentMethod.PAYPAL: 'paypal_date',
-                PaymentMethod.STRIPE: 'stripe_date',
-            }.get(invoice.payment_method)
-            if payment_date_field and getattr(invoice, payment_date_field) is None:
-                setattr(invoice, payment_date_field, timezone.now())
-                update_fields.append(payment_date_field)
+        if new_status == PaymentStatus.PAID and invoice.paid_at is None:
+            invoice.paid_at = timezone.now()
+            update_fields.append('paid_at')
         invoice.save(update_fields=update_fields)
 
         return Response(

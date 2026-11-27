@@ -4,7 +4,6 @@ from invoice_app.models import Invoice, PaymentStatus, PaymentMethod, ServiceCat
 from django.utils.translation import gettext_lazy as _
 
 
-
 # -------------------------
 # Bonus
 # -------------------------
@@ -18,7 +17,6 @@ class DiscountCode(models.Model):
 
     def __str__(self):
         return f"{self.code} ({self.percent_value}%)"
-
 
 
 # -------------------------
@@ -39,7 +37,6 @@ class Purchase(models.Model):
         related_name='purchases',
         limit_choices_to={'role': User.ProfileType.CUSTOMER}
     )
-
 
     service = models.ForeignKey(
         ServiceCatalog, on_delete=models.CASCADE, related_name='purchases')
@@ -62,23 +59,29 @@ class Purchase(models.Model):
         choices=PaymentMethod.choices,
         default=PaymentMethod.PAYPAL
     )
+    payment_method_id = models.CharField(max_length=255, null=True, blank=True)
 
     # SNAPSHOT VALUES
-    subtotal = models.DecimalField(max_digits=8, decimal_places=2)
+    discount_amount = models.DecimalField(
+        decimal_places=2, max_digits=10, default=0)  # €
 
-    tax_percent = models.DecimalField(max_digits=5, decimal_places=2)
-    tax_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    discount_percentage = models.DecimalField(
+        decimal_places=2, max_digits=10, default=0)  # %
 
-    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    discount_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    # Amount
+    # Copy of the price
+    base_net_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
-    total = models.DecimalField(max_digits=8, decimal_places=2)
+    # base_net_amount - discount_amount
+    net_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
-    paypal_order_id = models.CharField(max_length=255, null=True, blank=True)
+    tax_percentage = models.DecimalField(decimal_places=2, max_digits=10)
+    tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
+
+    gross_price = models.DecimalField(decimal_places=2, max_digits=10)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
 
     def __str__(self):
         return f"{self.customer.first_name}, {self.customer.last_name}"

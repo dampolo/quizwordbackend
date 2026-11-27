@@ -105,6 +105,7 @@ class Invoice(models.Model):
     user_customer_street_number = models.CharField(max_length=10)
     user_customer_postcode = models.CharField(max_length=20)
     user_customer_city = models.CharField(max_length=100)
+    user_customer_country = models.CharField(max_length=20)
 
     # --- COMPANY SNAPSHOT ---
     company_name = models.CharField(max_length=255)
@@ -112,6 +113,7 @@ class Invoice(models.Model):
     company_street_number = models.CharField(max_length=20)
     company_postcode = models.CharField(max_length=10)
     company_city = models.CharField(max_length=100)
+    company_country = models.CharField(max_length=100)
     company_tax_number = models.CharField(max_length=50)
     company_email = models.EmailField()
     company_bank = models.CharField(max_length=100)
@@ -127,8 +129,7 @@ class Invoice(models.Model):
     issue_date = models.DateTimeField(null=True, blank=True)
     due_date = models.DateTimeField(default=get_due_date)
 
-    paypal_date = models.DateTimeField(null=True, blank=True)
-    stripe_date = models.DateTimeField(null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     is_finalized = models.BooleanField(default=False)
 
@@ -151,7 +152,7 @@ class Invoice(models.Model):
     tax_percentage = models.DecimalField(decimal_places=2, max_digits=10)
     tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
-    gross_price = models.DecimalField(decimal_places=2, max_digits=10)
+    gross_amount = models.DecimalField(decimal_places=2, max_digits=10)
 
     notes = models.TextField(blank=True)
 

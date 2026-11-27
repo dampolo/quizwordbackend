@@ -33,6 +33,7 @@ class User(AbstractUser):
     street_number = models.CharField(max_length=10, blank=True)
     postcode = models.CharField(max_length=20, blank=True)
     city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True, default="")
     phone = models.CharField(blank=True, max_length=20, default="")
 
     has_subscription = models.BooleanField(default=False)
