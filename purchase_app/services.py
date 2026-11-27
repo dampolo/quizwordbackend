@@ -74,7 +74,6 @@ class PurchaseService:
             'net_amount': net_amount,
             'tax_percentage': tax_percent,
             'tax_amount': tax_amount,
-            'gross_price': gross_price,
         }
 
         invoice = Invoice.objects.create(
@@ -84,6 +83,7 @@ class PurchaseService:
             invoice_status=PaymentStatus.UNPAID,
             payment_method=PaymentMethod.BANK_TRANSFER,
             abo_choice=service.abo_choice,
+            gross_amount=gross_price,
             **amounts,
             user_customer_id=customer.id,
             user_customer_number=customer.customer_number,
@@ -93,11 +93,13 @@ class PurchaseService:
             user_customer_street_number=customer.street_number,
             user_customer_postcode=customer.postcode,
             user_customer_city=customer.city,
+            user_customer_country=customer.country,
             company_name=company.name,
             company_street=company.street,
             company_street_number=company.street_number,
             company_postcode=company.postcode,
             company_city=company.city,
+            company_country=company.country,
             company_tax_number=company.tax_number,
             company_email=company.email,
             company_bank=company.bank,
@@ -111,6 +113,7 @@ class PurchaseService:
             service=service,
             discount=discount,
             status=PaymentStatus.UNPAID,
+            gross_price=gross_price,
             **amounts,
             payment_method=PaymentMethod.BANK_TRANSFER,
         )
