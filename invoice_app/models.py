@@ -3,6 +3,9 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+from datetime import timedelta
+
 
 from auth_app.models import User
 
@@ -31,6 +34,8 @@ class InvoiceType(models.TextChoices):
     INVOICE = 'invoice', _('Invoice')
     CREDIT_NOTE = 'credit_note', _('Credit Note')
 
+def get_due_date():
+    return timezone.now() + timedelta(days=1)
 
 class PaymentStatus(models.TextChoices):
     PENDING = 'pending', _('Pending')       # created but not yet due
@@ -118,18 +123,35 @@ class Invoice(models.Model):
     # --- STATUS INFO ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    issue_date = models.DateTimeField(null=True, blank=True)
+    due_date = models.DateTimeField(default=get_due_date)
+
+    paypal_date = models.DateTimeField(null=True, blank=True)
+    stripe_date = models.DateTimeField(null=True, blank=True)
+
     is_finalized = models.BooleanField(default=False)
 
     # --- INVOICE TOTALS ---
+    
     # Discount
-    discount = models.DecimalField(
-        decimal_places=2, max_digits=10, default=0)  # %
-    discount_amount_value = models.DecimalField(
+    discount_amount = models.DecimalField(
         decimal_places=2, max_digits=10, default=0)  # €
+    
+    discount_percentage = models.DecimalField(
+        decimal_places=2, max_digits=10, default=0)  # %
+    
     # Amount
-    amount = models.DecimalField(decimal_places=2, max_digits=10)
-    value_tax = models.DecimalField(decimal_places=2, max_digits=10)
-    value_tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
+    # Copy of the price 
+    base_net_amount = models.DecimalField(decimal_places=2, max_digits=10)
+
+    # base_net_amount - discount_amount
+    net_amount = models.DecimalField(decimal_places=2, max_digits=10)
+
+    tax_percentage = models.DecimalField(decimal_places=2, max_digits=10)
+    tax_amount = models.DecimalField(decimal_places=2, max_digits=10)
+
+    gross_price = models.DecimalField(decimal_places=2, max_digits=10)
 
     notes = models.TextField(blank=True)
 

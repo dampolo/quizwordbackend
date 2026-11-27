@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -21,7 +23,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'related_invoice',
 
             # customer snapshot
-            'user_customer_id',
+            'user_customer_id', 'user_customer_number',
             'user_customer_first_name', 'user_customer_last_name', 'user_customer_street',
             'user_customer_street_number', 'user_customer_postcode', 'user_customer_city',
 
@@ -32,18 +34,17 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'company_bank_account', 'company_swift_code', 'company_logo',
 
             # invoice totals
-            'discount',
-            'discount_amount_value',
+            'discount_percentage', 'discount_amount',
 
-            'amount',
-            'value_tax',
-            'value_tax_amount',
+            'base_net_amount', 'net_amount', 'tax_percentage',
+            'tax_amount', 'gross_price',
 
             # relations
             'customer', 'business',
 
             # system fields
             'created_at', 'updated_at', 'is_finalized',
+            'issue_date', 'due_date', 'paypal_date', 'stripe_date',
 
             'payment_method',
             'abo_choice',
@@ -53,16 +54,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # Read-only fields: CANNOT be set by frontend
         read_only_fields = [
             'id',
-            'amount',
+            'base_net_amount', 'net_amount', 'tax_percentage',
+            'tax_amount', 'gross_price',
             'business',
             'invoice_status',
             'invoice_number',
             'created_at',
             'updated_at',
+            'paypal_date', 'stripe_date',
             'is_finalized',
 
             # Customer snapshot
-            'user_customer_id',
+            'user_customer_id', 'user_customer_number',
             'user_customer_first_name', 'user_customer_last_name', 'user_customer_street',
             'user_customer_street_number', 'user_customer_postcode', 'user_customer_city',
 
@@ -81,8 +84,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'company_logo',
 
             # invoice totals
-            'discount',
-            'discount_amount_value',
+            'discount_percentage', 'discount_amount',
 
         ]
 
@@ -93,7 +95,22 @@ class InvoiceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'abo_choice': 'Bitte zuerst einen Preis fuer diesen Tarif hinterlegen.'
             })
-        attrs['amount'] = catalog.amount
+        tax = Tax.objects.first()
+        if tax is None:
+            raise serializers.ValidationError(
+                'Bitte zuerst die Steuerdaten hinterlegen.')
+        tax_percentage = tax.percent if tax.active else Decimal('0.00')
+        gross_price = catalog.amount
+        net_amount = (gross_price / (Decimal('1') + tax_percentage / Decimal('100'))).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP,
+        )
+        attrs.update(
+            base_net_amount=net_amount,
+            net_amount=net_amount,
+            tax_percentage=tax_percentage,
+            tax_amount=gross_price - net_amount,
+            gross_price=gross_price,
+        )
         return attrs
 
 
@@ -164,8 +181,11 @@ class CustomerInvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'invoice_number', 'service_name', 'invoice_status', 'abo_choice','created_at']
-        read_only_fields = ['id', 'invoice_number', 'service_name','invoice_status', 'abo_choice', 'created_at']
+        fields = [
+            'id', 'invoice_number', 'service_name', 'invoice_status', 'abo_choice',
+            'created_at', 'issue_date', 'due_date', 'paypal_date', 'stripe_date',
+        ]
+        read_only_fields = fields
 
     def get_service_name(self, obj):
         return obj.get_abo_choice_display()

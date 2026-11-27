@@ -4,6 +4,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.utils import timezone
 from rest_framework import mixins, permissions, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -13,7 +14,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from auth_app.models import User
 from company_app.models import Company
-from invoice_app.models import (Invoice, PaymentStatus,
+from invoice_app.models import (Invoice, PaymentMethod, PaymentStatus,
                                 ServiceCatalog, Tax)
 
 from .serializer import (InvoiceSerializer,
@@ -45,7 +46,16 @@ class InvoiceView(
 
         # Update status
         invoice.invoice_status = new_status
-        invoice.save(update_fields=['invoice_status'])
+        update_fields = ['invoice_status', 'updated_at']
+        if new_status == PaymentStatus.PAID:
+            payment_date_field = {
+                PaymentMethod.PAYPAL: 'paypal_date',
+                PaymentMethod.STRIPE: 'stripe_date',
+            }.get(invoice.payment_method)
+            if payment_date_field and getattr(invoice, payment_date_field) is None:
+                setattr(invoice, payment_date_field, timezone.now())
+                update_fields.append(payment_date_field)
+        invoice.save(update_fields=update_fields)
 
         return Response(
             {"status": f"Payment status updated to: {new_status}"},

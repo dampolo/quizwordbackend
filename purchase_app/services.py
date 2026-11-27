@@ -29,12 +29,14 @@ class PurchaseService:
         gross_price = service.amount
         tax_percent = tax.percent if tax.active else Decimal('0.00')
         discount_percent = Decimal('0.00')
+        
         if discount is not None:
             if not discount.active:
                 raise ValidationError('Der Rabattcode ist nicht aktiv.')
             if discount.expires_at is not None and discount.expires_at <= timezone.now():
                 raise ValidationError('Der Rabattcode ist abgelaufen.')
             discount_percent = Decimal(discount.percent_value)
+
         if not Decimal('0') <= discount_percent <= Decimal('100'):
             raise ValidationError(
                 'Der Rabatt muss zwischen 0 und 100 Prozent liegen.')
@@ -42,9 +44,11 @@ class PurchaseService:
         discount_amount = (gross_price * discount_percent / Decimal('100')).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP,
         )
+
         total = (gross_price - discount_amount).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP,
         )
+
         # Catalog prices include tax; extract its share from the discounted total.
         tax_amount = (total * tax_percent / (Decimal('100') + tax_percent)).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP,
